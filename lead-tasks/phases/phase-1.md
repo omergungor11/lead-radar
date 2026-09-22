@@ -7,7 +7,7 @@
 
 **Agent**: orchestrator (paket kurulumu) + devops (config)
 **Complexity**: M
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-007
 
 ### Açıklama
@@ -15,13 +15,13 @@
 (SQLite); Vitest + Playwright; `package.json` script'leri; `.env.example`; GitHub Actions CI iskeleti.
 
 ### Acceptance Criteria
-- [ ] `pnpm dev` 3000'de açılıyor
-- [ ] `pnpm typecheck && pnpm lint && pnpm test && pnpm build` yeşil (boş testle)
-- [ ] `.env.example`: `DATABASE_URL`, `ADMIN_PASSWORD`, `GOOGLE_PLACES_API_KEY`, `PLACES_MOCK`, `SESSION_SECRET`
-- [ ] Script'ler: `dev build start typecheck lint test test:e2e db:migrate db:seed db:studio`
-- [ ] `.github/workflows/ci.yml`: typecheck + lint + test
-- [ ] `lead-config/tech-stack.md`'ye gerçek versiyonlar yazıldı
-- [ ] TASK-001 ve TASK-006 COMPLETED'a çekildi
+- [x] `pnpm dev` 3000'de açılıyor
+- [x] `pnpm typecheck && pnpm lint && pnpm test && pnpm build` yeşil (boş testle)
+- [x] `.env.example`: `DATABASE_URL`, `ADMIN_PASSWORD`, `GOOGLE_PLACES_API_KEY`, `PLACES_MOCK`, `SESSION_SECRET`
+- [x] Script'ler: `dev build start typecheck lint test test:e2e db:migrate db:seed db:studio`
+- [x] `.github/workflows/ci.yml`: typecheck + lint + test
+- [x] `lead-config/tech-stack.md`'ye gerçek versiyonlar yazıldı
+- [x] TASK-001 ve TASK-006 COMPLETED'a çekildi
 
 ---
 

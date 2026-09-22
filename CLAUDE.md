@@ -23,7 +23,7 @@ sürecini (NEW → WON) yöneten lead-generation aracı. İlk pazar KKTC; ilk ku
 
 ## Mevcut Durum
 
-**Progress**: 4/18 task (%22) — Phase 0 kısmen bitti, Phase 1 (MVP) başlıyor.
+**Progress**: 8/18 task (%44) — Phase 0 bitti, Phase 1: TASK-101 iskelet tamam; sıradaki TASK-102 ∥ TASK-103.
 
 > Session başında `/cold-start`, gün içinde `/status`.
 
@@ -52,7 +52,7 @@ PLACES_MOCK=1 pnpm dev            # API anahtarı olmadan, 15 mock işletmeyle
 pnpm db:migrate && pnpm db:seed   # Prisma migrate + seed
 pnpm typecheck && pnpm lint       # Pre-commit
 pnpm test                         # Vitest
-pnpm test:e2e                     # Playwright smoke
+pnpm test:e2e                     # Playwright smoke (3000 doluysa E2E_PORT=3100)
 pnpm build
 ```
 

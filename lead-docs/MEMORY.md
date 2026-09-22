@@ -4,8 +4,8 @@
 - Lead Radar: websitesiz işletmeleri Google Places'tan bulan, skorlayan ve satış sürecini yöneten panel. İlk pazar KKTC, ilk kullanıcı Piton Studios.
 
 ## Project Status
-- **Phase 0**: 4/7 — meta dizinler, agent'lar, CLAUDE.md hazır; Next.js iskeleti (TASK-101) ve ilk push (TASK-007) bekliyor
-- **Phase 1**: 0/11 — spesifikasyon `lead-plans/PROMPT.md`'de hazır, inşa başlamadı
+- **Phase 0**: 7/7 ✓
+- **Phase 1**: 1/11 — TASK-101 iskelet bitti; sıradaki TASK-102 (şema) ∥ TASK-103 (auth)
 
 ## Important Patterns
 - Places Text Search'te field mask sadece `id, displayName, websiteUri, businessStatus, nextPageToken`; Details yalnız sitesizlere → maliyet ~%60 düşer
@@ -17,6 +17,11 @@
 ## Known Issues / Gotchas
 - Places Text Search sorgu başına max 60 sonuç (3 sayfa × 20). Daha fazlası için sorguyu bölge/kategori alt kırılımına böl
 - Google e-posta vermez → `email` alanı elle girilir
+- pnpm 10 build script'lerini bloklar → yeni native paket eklenirse `package.json` `pnpm.onlyBuiltDependencies`'e ekle
+- `prisma init` `prisma.config.ts` üretir → silindi; varken `package.json#prisma.seed` ve `.env` otomatik yükleme çalışmaz
+- Port 3000 başka projelerin dev server'ıyla dolu olabilir → e2e: `E2E_PORT=3100 pnpm test:e2e` (yoksa Playwright yabancı sunucuyu yeniden kullanır)
+- zod **v4** kurulu (v3 değil): `z.email()`, `z.string().min(1, { error })`
+- `app/page.tsx` geçici; TASK-109'da `(panel)/page.tsx` gelince silinmeli (aynı `/` rotası çakışır)
 
 ## Working Credentials (Dev)
 - `ADMIN_PASSWORD` → `.env`'de; `PLACES_MOCK=1` ile anahtar gerekmez
