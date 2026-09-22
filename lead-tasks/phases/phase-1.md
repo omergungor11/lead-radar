@@ -62,7 +62,7 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 
 **Agent**: backend
 **Complexity**: M
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-102
 
 ### Açıklama
@@ -71,10 +71,10 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 `lib/phone.ts` → `toE164(national, countryHint)` (KKTC `+90 392`, TR `+90`).
 
 ### Acceptance Criteria
-- [ ] Testler implementasyondan önce yazıldı; her sinyal için sınır değer testi var
-- [ ] `computeScore` saf, DB'ye dokunmaz
-- [ ] Geçersiz geçiş (`WON → NEW`) `false`
-- [ ] `0392 228 12 34` → `+903922281234`
+- [x] Testler implementasyondan önce yazıldı; her sinyal için sınır değer testi var
+- [x] `computeScore` saf, DB'ye dokunmaz
+- [x] Geçersiz geçiş (`WON → NEW`) `false`
+- [x] `0392 228 12 34` → `+903922281234`
 
 ---
 
@@ -166,14 +166,14 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 
 **Agent**: frontend + backend (`/api/settings/[key]`, `/api/templates*`)
 **Complexity**: M
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-102
 
 ### Acceptance Criteria
-- [ ] Şehir ekle/sil → arama formu dropdown'u anında güncellenir
-- [ ] Bonus kategori listesi düzenlenir; mevcut işletmelerin skoru "Yeniden hesapla" ile güncellenir
-- [ ] Şablon CRUD; opt-out cümlesi yoksa uyarı (engellemez)
-- [ ] API anahtarı gösterilmez; "tanımlı ✓ / ✗" durumu
+- [x] Şehir ekle/sil → arama formu dropdown'u anında güncellenir (paylaşılan `["settings"]` query key; arama formu TASK-105'te bu key'i kullanmalı)
+- [x] Bonus kategori listesi düzenlenir; mevcut işletmelerin skoru "Yeniden hesapla" ile güncellenir
+- [x] Şablon CRUD; opt-out cümlesi yoksa uyarı (engellemez)
+- [x] API anahtarı gösterilmez; "tanımlı ✓ / ✗" durumu
 
 ---
 

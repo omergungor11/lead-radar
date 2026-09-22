@@ -3,6 +3,11 @@
 ## 2026-09-22
 
 ### Added
+- TASK-104: `lib/scoring` (log-interpolasyonlu yorum puanı, bantlar), `lib/status` (geçiş tablosu + `requiresConfirmation`), `lib/phone` (KKTC/TR E.164, `waLink`), `lib/templates#renderTemplate`, `lib/categories` (~100 Türkçe etiket) — test-first, 199 test
+- TASK-110: Panel layout (sidebar, mobil Sheet), Ayarlar sayfası (Places durumu, şehir/bonus kategori editörü, skor yeniden hesapla, şablon CRUD + opt-out uyarısı); `/api/settings*`, `/api/templates*`, `/api/businesses/rescore`
+
+### Fixed
+- shadcn preset'inin kendine referans veren `--font-sans` değişkeni → Geist uygulanmıyordu (serif fallback)
 - TASK-102: Prisma şema (6 model) + `init` migration + idempotent seed (2 ayar, 2 şablon, opt-out'lu); `lib/db.ts` singleton
 - TASK-103: Tek şifreli auth — HMAC (Web Crypto) imzalı `lr_session` cookie, `middleware.ts` (API 401 / sayfa → `/login?next=`), `/api/auth/login|logout`, `lib/env.ts` + `instrumentation.ts` açılış kontrolü, `lib/api.ts` response yardımcıları, `/login` sayfası, TanStack Query + Toaster provider; 18 yeni test
 - TASK-101: Next.js 15.5 + Tailwind 4 + shadcn (radix-nova, 18 bileşen) + Prisma 6 (SQLite) + Vitest + Playwright iskeleti; `package.json` script'leri, GitHub Actions CI. TASK-001/006/007 kapandı

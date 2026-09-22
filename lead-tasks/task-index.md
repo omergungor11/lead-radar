@@ -5,10 +5,10 @@
 | Phase | Name | Total | Done | In Progress | Review | Pending | Blocked |
 |-------|------|-------|------|-------------|--------|---------|---------|
 | 0 | Project Setup | 7 | 7 | 0 | 0 | 0 | 0 |
-| 1 | MVP — Panel + Places + Pipeline | 11 | 3 | 0 | 0 | 8 | 0 |
-| **Total** | | **18** | **10** | **0** | **0** | **8** | **0** |
+| 1 | MVP — Panel + Places + Pipeline | 11 | 5 | 0 | 0 | 6 | 0 |
+| **Total** | | **18** | **12** | **0** | **0** | **6** | **0** |
 
-**Progress**: 10/18 (56%)
+**Progress**: 12/18 (67%)
 
 ---
 
@@ -37,13 +37,13 @@ Spesifikasyon: `lead-plans/PROMPT.md`. Detaylar: `lead-tasks/phases/phase-1.md`.
 | TASK-101 | Next.js 15 + Tailwind + shadcn + Prisma + Vitest + Playwright iskeleti, `.env.example`, CI | orchestrator + devops | M | COMPLETED | TASK-007 |
 | TASK-102 | Prisma şema + migrate + seed (şablonlar, şehirler, mock işletmeler) | database | M | COMPLETED | TASK-101 |
 | TASK-103 | Auth — login sayfası, middleware, httpOnly cookie | backend + frontend | S | COMPLETED | TASK-101 |
-| TASK-104 | `lib/scoring` + `lib/status` + `lib/phone` — test-first | backend | M | PENDING | TASK-102 |
+| TASK-104 | `lib/scoring` + `lib/status` + `lib/phone` — test-first | backend | M | COMPLETED | TASK-102 |
 | TASK-105 | `lib/places` + mock + `/api/search` + SSE + SearchJob | backend | L | PENDING | TASK-104 |
 | TASK-106 | `/api/businesses*` + tablo ekranı (filtre, sıralama, inline e-posta/durum, toplu işlem) | backend + frontend | L | PENDING | TASK-104 |
 | TASK-107 | Detay sheet — galeri, yorumlar, skor kırılımı, notlar, şablon kopyala → WhatsApp | frontend + backend | L | PENDING | TASK-106 |
 | TASK-108 | Excel export (`/api/export`, exceljs) | backend | S | PENDING | TASK-106 |
 | TASK-109 | Dashboard — kartlar, funnel, son aramalar | frontend + backend | M | PENDING | TASK-105, TASK-106 |
-| TASK-110 | Ayarlar — şehirler, bonus kategoriler, şablon CRUD | frontend + backend | M | PENDING | TASK-102 |
+| TASK-110 | Ayarlar — şehirler, bonus kategoriler, şablon CRUD | frontend + backend | M | COMPLETED | TASK-102 |
 | TASK-111 | Playwright smoke + README gerçek kurulum adımları + DoD kontrolü | frontend + docs | M | PENDING | TASK-101..110 |
 
 ---

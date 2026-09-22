@@ -5,7 +5,7 @@
 
 ## Project Status
 - **Phase 0**: 7/7 ✓
-- **Phase 1**: 3/11 — TASK-101/102/103 bitti; sıradaki TASK-104 (skor/durum/telefon, backend) ∥ TASK-110 ayarlar UI iskeleti (frontend)
+- **Phase 1**: 5/11 — 101/102/103/104/110 bitti; sıradaki TASK-105 (Places + SSE, backend) ∥ TASK-106 (tablo)
 
 ## Important Patterns
 - Places Text Search'te field mask sadece `id, displayName, websiteUri, businessStatus, nextPageToken`; Details yalnız sitesizlere → maliyet ~%60 düşer
@@ -27,7 +27,10 @@
 - API route'ları `lib/api.ts` (`ok`, `apiError`, `validationError`, `readJson`) kullanır; env `lib/env.ts#getServerEnv()`
 - Middleware edge'de → `lib/auth.ts` sadece Web Crypto; Node `crypto` import etme
 - Açık risk: login'de rate limit yok, oturum iptali yok (SESSION_SECRET değiştir = herkes düşer). İnternete açmadan önce ele al
-- `app/page.tsx` geçici; TASK-109'da `(panel)/page.tsx` gelince silinmeli (aynı `/` rotası çakışır)
+- Durum geçişleri: NEW→CONTACTED izinli (şablon kopyala akışı); LOST/SKIPPED→CONTACTED izinli ama `requiresConfirmation` true. "Geri al" (CONTACTED→NEW) `canTransition`'da YOK → TASK-107'de PATCH'e ayrı undo yolu (son StatusChange'i geri al) gerekir
+- Client component'ler `lib/settings.ts` / `lib/message-templates.ts`'i (Prisma) import etmez; tipler `import type` ile veya client-safe `lib/templates.ts`'ten
+- Font değişkenleri `<html>`'de olmalı (globals.css `html { font-sans }`); body'ye koyarsan serif fallback
+- Tarayıcı doğrulaması: `pnpm dev --port 3200` + Playwright script (şifre `.env`'den), sonra süreci kapat
 
 ## Working Credentials (Dev)
 - `ADMIN_PASSWORD` → `.env`'de; `PLACES_MOCK=1` ile anahtar gerekmez

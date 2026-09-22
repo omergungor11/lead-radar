@@ -23,7 +23,7 @@ sürecini (NEW → WON) yöneten lead-generation aracı. İlk pazar KKTC; ilk ku
 
 ## Mevcut Durum
 
-**Progress**: 10/18 task (%56) — Phase 0 bitti; Phase 1: iskelet, şema, auth tamam. Sıradaki TASK-104 ∥ TASK-110 (UI iskeleti).
+**Progress**: 12/18 task (%67) — Phase 0 bitti; Phase 1: iskelet, şema, auth, skor/durum/telefon, ayarlar tamam. Sıradaki TASK-105 (Places + SSE) ∥ TASK-106 (tablo).
 
 > Session başında `/cold-start`, gün içinde `/status`.
 
