@@ -70,7 +70,7 @@ cp .env.example .env
 Örnek:
 ```
 ADMIN_PASSWORD="guclu-sifremi-buraya"
-SESSION_SECRET="a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+SESSION_SECRET="<openssl rand -hex 32 çıktısı>"
 PLACES_MOCK=1
 ```
 
