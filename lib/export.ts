@@ -24,6 +24,7 @@ export interface ExportRow {
   name: string;
   primaryType: string | null;
   city: string;
+  district: string | null;
   address: string | null;
   phone: string | null;
   email: string | null;
@@ -46,6 +47,7 @@ const COLUMNS: readonly { key: ColumnKey; width: number }[] = [
   { key: "name", width: 32 },
   { key: "category", width: 20 },
   { key: "city", width: 14 },
+  { key: "district", width: 16 },
   { key: "address", width: 40 },
   { key: "phone", width: 18 },
   { key: "email", width: 28 },
@@ -91,6 +93,7 @@ function rowValues(row: ExportRow): Record<ColumnKey, string | number | null> {
     name: row.name,
     category: row.primaryType ? categoryLabel(row.primaryType) : null,
     city: row.city,
+    district: row.district ?? "",
     address: row.address,
     phone: row.phone,
     email: row.email,
@@ -156,6 +159,7 @@ export async function fetchExportRows(
       name: true,
       primaryType: true,
       city: true,
+      district: true,
       address: true,
       phone: true,
       email: true,
@@ -177,6 +181,7 @@ export async function fetchExportRows(
       name: b.name,
       primaryType: b.primaryType,
       city: b.city,
+      district: b.district,
       address: b.address,
       phone: b.phone,
       email: b.email,

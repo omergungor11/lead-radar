@@ -17,6 +17,7 @@ import { tr } from "@/lib/tr";
 interface ActiveJob {
   id: string;
   city: string;
+  district?: string;
 }
 
 export function SearchesView() {
@@ -35,7 +36,7 @@ export function SearchesView() {
     if (attachedFromHistory.current || activeJob || !jobs) return;
     const running = jobs.find((job) => job.status === "RUNNING");
     if (running) {
-      setActiveJob({ id: running.id, city: running.city });
+      setActiveJob({ id: running.id, city: running.city, district: running.district ?? undefined });
     }
     attachedFromHistory.current = true;
   }, [jobs, activeJob]);
@@ -48,10 +49,12 @@ export function SearchesView() {
     <div className="flex flex-col gap-6">
       <SearchForm
         disabled={isJobRunning}
-        onStarted={(jobId, city) => setActiveJob({ id: jobId, city })}
+        onStarted={(jobId, city, district) => setActiveJob({ id: jobId, city, district })}
       />
 
-      {activeJob ? <SearchProgressCard progress={progress} city={activeJob.city} /> : null}
+      {activeJob ? (
+        <SearchProgressCard progress={progress} city={activeJob.city} district={activeJob.district} />
+      ) : null}
 
       <Card>
         <CardHeader>

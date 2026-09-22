@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/select";
 import { apiFetch } from "@/components/api-client";
 import { CityCombobox } from "@/components/city-combobox";
+import { DistrictCombobox } from "@/components/district-combobox";
 import type { SettingsData } from "@/components/settings/types";
+import { districtsOf } from "@/lib/districts";
 import { STATUSES } from "@/lib/status";
 import { tr } from "@/lib/tr";
 import type { BusinessFiltersState } from "./use-business-filters";
@@ -29,7 +31,9 @@ const SORTS = [
 interface FiltersBarProps {
   filters: BusinessFiltersState;
   onChange: (
-    patch: Partial<Record<"city" | "category" | "status" | "band" | "q" | "sort", string | undefined>>,
+    patch: Partial<
+      Record<"city" | "district" | "category" | "status" | "band" | "q" | "sort", string | undefined>
+    >,
   ) => void;
 }
 
@@ -41,6 +45,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
 
   const [query, setQuery] = useState(filters.q ?? "");
   const skipNext = useRef(true);
+  const hasDistricts = Boolean(filters.city) && districtsOf(filters.city).length > 0;
 
   // Filtre URL'den değiştiğinde (ör. geri tuşu) yerel input'u senkronla.
   useEffect(() => {
@@ -75,11 +80,21 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
       <CityCombobox
         cities={settings?.cities ?? []}
         value={filters.city}
-        onChange={(city) => onChange({ city })}
+        onChange={(city) => onChange({ city, district: undefined })}
         allLabel={tr.businesses.filters.cityAll}
         aria-label={tr.businesses.filters.cityLabel}
         className="sm:w-44"
       />
+
+      {hasDistricts ? (
+        <DistrictCombobox
+          city={filters.city}
+          value={filters.district}
+          onChange={(district) => onChange({ district })}
+          aria-label={tr.businesses.filters.districtLabel}
+          className="sm:w-40"
+        />
+      ) : null}
 
       <Input
         value={filters.category ?? ""}

@@ -42,7 +42,16 @@ export function BusinessTable() {
 
   useEffect(() => {
     setSelected(new Set());
-  }, [filters.city, filters.category, filters.status, filters.band, filters.q, filters.sort, filters.page]);
+  }, [
+    filters.city,
+    filters.district,
+    filters.category,
+    filters.status,
+    filters.band,
+    filters.q,
+    filters.sort,
+    filters.page,
+  ]);
 
   const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
 
@@ -161,7 +170,16 @@ export function BusinessTable() {
                   <TableCell className="text-sm text-muted-foreground">
                     {categoryLabel(item.primaryType)}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{item.city}</TableCell>
+                  <TableCell className="text-sm">
+                    {item.district ? (
+                      <div className="flex flex-col">
+                        <span>{item.district}</span>
+                        <span className="text-xs text-muted-foreground">{item.city}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">{item.city}</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <PhoneCell phone={item.phone} phoneE164={item.phoneE164} />
                   </TableCell>

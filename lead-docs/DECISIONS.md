@@ -7,6 +7,7 @@
 **Karar**: `DEFAULT_CITIES` = 6 KKTC şehri + 81 il (`lib/config.ts`: `KKTC_CITIES`, `TURKEY_PROVINCES`). Şehir seçici aranabilir ve KKTC / Türkiye / Diğer gruplu (`components/city-combobox.tsx`).
 **Gerekçe**: Kullanıcı: KKTC'de işletme sayısı az; Türkiye pazarı hemen gerekli.
 **Alternatifler**: İl + ilçe hiyerarşisi (~970 ilçe) — şimdilik yok; büyük illerde 60 sonuç sınırı için kullanıcı kategoriye ilçe yazar ("berber Kadıköy").
+**Güncelleme (aynı gün)**: İlçe desteği — `lib/districts.ts` (973 ilçe; turkey-neighbourhoods@4.0.3, MIT, bir kerelik üretildi, runtime bağımlılığı yok), `SearchJob.district` / `Business.district` (nullable). Sorgu `<kategori> <ilçe> <il>`; Merkez ilçesi `<kategori> <il> merkez`. İşletmenin ilçesi ilk bulunduğu ilçe araması; sonraki aramalar yalnız boşsa doldurur.
 **Etki**: `SETTING_MAX_ITEMS` 100 → 300. Mevcut DB'lerde seed ayarı ezmez → liste bir kerelik birleştirildi. Mock fixture yalnız KKTC; Türkiye aramaları gerçek anahtar ister.
 
 ## D-006: Orchestrator Fable, alt agent'lar opus/sonnet/haiku — 2026-09-22

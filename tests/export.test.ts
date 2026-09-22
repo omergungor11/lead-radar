@@ -20,6 +20,7 @@ const HEADERS = [
   "İşletme",
   "Kategori",
   "Şehir",
+  "İlçe",
   "Adres",
   "Telefon",
   "E-posta",
@@ -38,6 +39,7 @@ const FIXTURE: ExportRow[] = [
     name: "Berber Ali",
     primaryType: "barber_shop",
     city: "Lefkoşa",
+    district: null,
     address: "Dereboyu Cd. 12",
     phone: "+90 392 228 12 34",
     email: "ali@example.com",
@@ -54,6 +56,7 @@ const FIXTURE: ExportRow[] = [
     name: "Kafe Deniz",
     primaryType: "unknown_type",
     city: "Girne",
+    district: null,
     address: null,
     phone: "05331234567",
     email: null,
@@ -69,7 +72,8 @@ const FIXTURE: ExportRow[] = [
   {
     name: "Telefonsuz",
     primaryType: null,
-    city: "İskele",
+    city: "İstanbul",
+    district: "Kadıköy",
     address: "Sahil yolu",
     phone: null,
     email: null,
@@ -117,6 +121,7 @@ describe("buildWorkbook", () => {
       "Berber Ali",
       "Berber",
       "Lefkoşa",
+      "",
       "Dereboyu Cd. 12",
       "+90 392 228 12 34",
       "ali@example.com",
@@ -133,6 +138,7 @@ describe("buildWorkbook", () => {
       "Kafe Deniz",
       "unknown_type",
       "Girne",
+      "",
       null,
       "05331234567",
       null,
@@ -146,19 +152,28 @@ describe("buildWorkbook", () => {
       null,
     ]);
     expect(rowValues(sheet, 4)[1]).toBeNull();
-    expect(rowValues(sheet, 4)[9]).toBe("Atlandı");
-    expect(rowValues(sheet, 4)[13]).toBe("Tek not");
+    expect(rowValues(sheet, 4).slice(2, 4)).toEqual(["İstanbul", "Kadıköy"]);
+    expect(rowValues(sheet, 4)[10]).toBe("Atlandı");
+    expect(rowValues(sheet, 4)[14]).toBe("Tek not");
   });
 
-  it("telefon hücresi metin: string değer + numFmt '@'", async () => {
+  it("15 sütun; İlçe Şehir'den hemen sonra", () => {
+    expect(HEADERS).toHaveLength(15);
+    expect(Object.values(tr.export.columns)).toEqual(HEADERS);
+  });
+
+  it("telefon hücresi metin (İlçe sonrası 6. sütun): string değer + numFmt '@'", async () => {
     const sheet = await readBack(await buildWorkbook(FIXTURE));
+    expect(sheet.getRow(1).getCell(6).value).toBe("Telefon");
     for (const r of [2, 3]) {
-      const cell = sheet.getRow(r).getCell(5);
+      const cell = sheet.getRow(r).getCell(6);
       expect(typeof cell.value).toBe("string");
       expect(cell.type).toBe(ExcelJS.ValueType.String);
       expect(cell.numFmt).toBe("@");
     }
-    expect(sheet.getRow(4).getCell(5).numFmt).toBe("@");
+    expect(sheet.getRow(4).getCell(6).numFmt).toBe("@");
+    // İlçe (5) sayı biçimine zorlanmaz
+    expect(sheet.getRow(2).getCell(5).numFmt).not.toBe("@");
   });
 
   it("boş liste → yalnız başlık", async () => {
@@ -180,6 +195,7 @@ function dbRow(over: Record<string, unknown> = {}): Record<string, unknown> {
     name: "A",
     primaryType: "cafe",
     city: "Girne",
+    district: null,
     address: null,
     phone: null,
     email: null,
@@ -218,6 +234,21 @@ describe("fetchExportRows", () => {
     );
   });
 
+  it("district filtresi where'e; ilçe satıra taşınır", async () => {
+    dbMock.business.findMany.mockResolvedValueOnce([dbRow({ city: "İstanbul", district: "Kadıköy" })]);
+    const { rows } = await fetchExportRows(
+      { filters: { city: "İstanbul", district: "Kadıköy" } },
+      "http://localhost/",
+    );
+    expect(rows[0]).toMatchObject({ city: "İstanbul", district: "Kadıköy" });
+    expect(dbMock.business.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: { city: "İstanbul", district: "Kadıköy" },
+        select: expect.objectContaining({ district: true }),
+      }),
+    );
+  });
+
   it("ids verilirse filtre yerine id listesi; üst sınır aşılırsa truncated", async () => {
     dbMock.business.findMany.mockResolvedValueOnce(Array.from({ length: EXPORT_MAX_ROWS + 1 }, () => dbRow()));
     const { rows, truncated } = await fetchExportRows({ ids: ["a", "b"] }, "http://localhost/");
@@ -240,7 +271,7 @@ describe("GET /api/export", () => {
       expect.objectContaining({ where: { id: { in: ["a", "b", "c"] } } }),
     );
     const sheet = await readBack(Buffer.from(await res.arrayBuffer()));
-    expect(sheet.getRow(2).getCell(13).value).toBe("http://localhost/api/photo?name=places%2Fp%2Fphotos%2F9");
+    expect(sheet.getRow(2).getCell(14).value).toBe("http://localhost/api/photo?name=places%2Fp%2Fphotos%2F9");
   });
 
   it("geçersiz filtre → 400", async () => {

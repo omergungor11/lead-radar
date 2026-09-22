@@ -18,6 +18,8 @@ export interface SearchJobInput {
   jobId: string;
   query: string;
   city: string;
+  /** Türkiye ilçesi (`isDistrictOf(city, district)` route'ta doğrulanır); yoksa il geneli */
+  district?: string | null;
 }
 
 interface Counters {
@@ -34,8 +36,23 @@ export function estimateCost(textSearchCalls: number, detailsCalls: number): num
   return Math.round(raw * 10_000) / 10_000;
 }
 
-export function buildTextQuery(query: string, city: string): string {
-  return `${query.trim()} ${city.trim()}`;
+/** İlçe adı "Merkez" olan (il merkezi) ilçeler — Places "Merkez"i yer adı olarak anlamaz. */
+const CENTRAL_DISTRICT = "Merkez";
+
+/**
+ * Places Text Search sorgusu:
+ * - ilçesiz: `berber Lefkoşa`
+ * - ilçeli:  `berber Kadıköy İstanbul`
+ * - "Merkez" ilçe: `berber Aksaray merkez` — "berber Merkez Aksaray" Places'te anlamsız/yanıltıcı;
+ *   il adı + "merkez" il merkezini hedefler.
+ */
+export function buildTextQuery(query: string, city: string, district?: string | null): string {
+  const q = query.trim();
+  const c = city.trim();
+  const d = district?.trim();
+  if (!d) return `${q} ${c}`;
+  if (d === CENTRAL_DISTRICT) return `${q} ${c} merkez`;
+  return `${q} ${d} ${c}`;
 }
 
 function toProgress(jobId: string, c: Counters, status: SearchProgress["status"], error?: string): SearchProgress {
@@ -88,7 +105,7 @@ export async function runSearchJob(input: SearchJobInput, client: PlacesClient):
 
   try {
     const bonusCategories = await getSetting(SETTING_KEYS.bonusCategories);
-    const textQuery = buildTextQuery(input.query, input.city);
+    const textQuery = buildTextQuery(input.query, input.city, input.district);
     let pageToken: string | undefined;
 
     for (let page = 0; page < MAX_PAGES && c.scanned < PLACES_MAX_RESULTS; page++) {
@@ -113,7 +130,10 @@ export async function runSearchJob(input: SearchJobInput, client: PlacesClient):
             c.detailsCalls += 1;
           }
           if (details && !details.websiteUri?.trim()) {
-            await upsertBusiness(details, input.city, jobId, { bonusCategories });
+            await upsertBusiness(details, input.city, jobId, {
+              bonusCategories,
+              district: input.district ?? null,
+            });
             c.saved += 1;
           }
         }

@@ -11,20 +11,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/components/api-client";
 import { CityCombobox } from "@/components/city-combobox";
+import { DistrictCombobox } from "@/components/district-combobox";
 import { useSettingsQuery } from "@/components/settings/use-settings-query";
+import { districtsOf } from "@/lib/districts";
 import { tr } from "@/lib/tr";
 
 interface SearchFormProps {
   disabled: boolean;
-  onStarted: (jobId: string, city: string) => void;
+  onStarted: (jobId: string, city: string, district?: string) => void;
 }
 
 export function SearchForm({ disabled, onStarted }: SearchFormProps) {
   const { data: settings } = useSettingsQuery();
   const [category, setCategory] = useState("");
   const [city, setCity] = useState("");
+  const [district, setDistrict] = useState<string | undefined>(undefined);
 
   const cities = settings?.cities ?? [];
+  const hasDistricts = districtsOf(city).length > 0;
 
   useEffect(() => {
     if (!city && settings && settings.cities.length > 0) {
@@ -33,13 +37,13 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
   }, [settings, city]);
 
   const mutation = useMutation({
-    mutationFn: (input: { query: string; city: string }) =>
+    mutationFn: (input: { query: string; city: string; district?: string }) =>
       apiFetch<{ jobId: string }>("/api/search", {
         method: "POST",
         body: JSON.stringify(input),
       }),
     onSuccess: (data, variables) => {
-      onStarted(data.jobId, variables.city);
+      onStarted(data.jobId, variables.city, variables.district);
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -53,7 +57,12 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
       toast.error(tr.searches.form.validationError);
       return;
     }
-    mutation.mutate({ query: trimmedCategory, city });
+    mutation.mutate({ query: trimmedCategory, city, district });
+  }
+
+  function handleCityChange(next: string | undefined) {
+    setCity(next ?? "");
+    setDistrict(undefined);
   }
 
   const showPlacesWarning =
@@ -102,16 +111,31 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
             <p className="text-xs text-muted-foreground">{tr.searches.form.categoryHint}</p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:max-w-xs">
-            <Label htmlFor="search-city">{tr.searches.form.cityLabel}</Label>
-            <CityCombobox
-              id="search-city"
-              cities={cities}
-              value={city || undefined}
-              onChange={(c) => setCity(c ?? "")}
-              placeholder={tr.searches.form.cityPlaceholder}
-              disabled={isSubmitDisabled}
-            />
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+            <div className="flex flex-col gap-2 sm:w-56">
+              <Label htmlFor="search-city">{tr.searches.form.cityLabel}</Label>
+              <CityCombobox
+                id="search-city"
+                cities={cities}
+                value={city || undefined}
+                onChange={handleCityChange}
+                placeholder={tr.searches.form.cityPlaceholder}
+                disabled={isSubmitDisabled}
+              />
+            </div>
+
+            {hasDistricts ? (
+              <div className="flex flex-col gap-2 sm:w-56">
+                <Label htmlFor="search-district">{tr.searches.form.districtLabel}</Label>
+                <DistrictCombobox
+                  id="search-district"
+                  city={city || undefined}
+                  value={district}
+                  onChange={setDistrict}
+                  disabled={isSubmitDisabled}
+                />
+              </div>
+            ) : null}
           </div>
 
           <Button type="submit" disabled={isSubmitDisabled} className="w-fit">

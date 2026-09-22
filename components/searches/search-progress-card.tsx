@@ -13,9 +13,10 @@ const PROGRESS_MAX = 60;
 interface SearchProgressCardProps {
   progress: SearchProgress | null;
   city: string;
+  district?: string;
 }
 
-export function SearchProgressCard({ progress, city }: SearchProgressCardProps) {
+export function SearchProgressCard({ progress, city, district }: SearchProgressCardProps) {
   if (!progress) {
     return (
       <Card>
@@ -77,7 +78,11 @@ export function SearchProgressCard({ progress, city }: SearchProgressCardProps) 
               {tr.searches.progress.summary(progress.scanned, progress.withoutWebsite)}
             </p>
             <Button asChild size="sm">
-              <Link href={`/businesses?city=${encodeURIComponent(city)}`}>
+              <Link
+                href={`/businesses?city=${encodeURIComponent(city)}${
+                  district ? `&district=${encodeURIComponent(district)}` : ""
+                }`}
+              >
                 {tr.searches.progress.viewResults}
               </Link>
             </Button>

@@ -35,6 +35,7 @@ export function useBusinessFilters() {
 
     return {
       city: searchParams.get("city") ?? undefined,
+      district: searchParams.get("district") ?? undefined,
       category: searchParams.get("category") ?? undefined,
       status: isStatus(statusParam) ? statusParam : undefined,
       band: isBand(bandParam) ? bandParam : undefined,
@@ -46,7 +47,11 @@ export function useBusinessFilters() {
   }, [searchParams]);
 
   const setFilter = useCallback(
-    (patch: Partial<Record<"city" | "category" | "status" | "band" | "q" | "sort", string | undefined>>) => {
+    (
+      patch: Partial<
+        Record<"city" | "district" | "category" | "status" | "band" | "q" | "sort", string | undefined>
+      >,
+    ) => {
       const params = new URLSearchParams(searchParams.toString());
       for (const [key, value] of Object.entries(patch)) {
         if (value === undefined || value === "") params.delete(key);

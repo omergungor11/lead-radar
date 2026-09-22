@@ -42,6 +42,7 @@ const optionalText = z.preprocess(blankToUndefined, z.string().trim().max(200).o
 
 export const businessFiltersSchema = z.object({
   city: optionalText,
+  district: optionalText,
   category: optionalText,
   status: z.preprocess(blankToUndefined, z.enum(STATUSES).optional()),
   band: z.preprocess(blankToUndefined, z.enum(SCORE_BANDS).optional()),
@@ -79,6 +80,7 @@ export function parseBusinessFilters(
 export function buildWhere(filters: BusinessFilters): Prisma.BusinessWhereInput {
   const where: Prisma.BusinessWhereInput = {};
   if (filters.city) where.city = filters.city;
+  if (filters.district) where.district = filters.district;
   if (filters.category) where.primaryType = filters.category;
   if (filters.status) where.status = filters.status;
 
@@ -183,6 +185,7 @@ export const listSelect = {
   name: true,
   primaryType: true,
   city: true,
+  district: true,
   address: true,
   phone: true,
   phoneE164: true,
@@ -222,6 +225,7 @@ export function toBusinessListItem(row: BusinessListRow, now: Date = new Date())
     name: row.name,
     primaryType: row.primaryType,
     city: row.city,
+    district: row.district,
     address: row.address,
     phone: row.phone,
     phoneE164: row.phoneE164,

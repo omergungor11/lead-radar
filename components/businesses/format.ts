@@ -35,6 +35,11 @@ export function formatDateTime(iso: string | null | undefined): string {
   return dateTimeFormatter.format(date);
 }
 
+/** İlçe seçiliyse "Kadıköy, İstanbul", değilse yalnız şehir. */
+export function formatCityDistrict(city: string, district: string | null): string {
+  return district ? `${district}, ${city}` : city;
+}
+
 export function formatRatingReviews(
   rating: number | null,
   count: number | null,

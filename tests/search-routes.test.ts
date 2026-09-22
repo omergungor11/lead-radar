@@ -6,6 +6,7 @@ interface JobRow {
   id: string;
   query: string;
   city: string;
+  district: string | null;
   status: string;
   scanned: number;
   withoutWebsite: number;
@@ -22,7 +23,8 @@ const startSearchJob = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/db", () => ({
   db: {
     searchJob: {
-      create: vi.fn(async ({ data }: { data: { query: string; city: string; status: string } }) => {
+      create: vi.fn(
+        async ({ data }: { data: { query: string; city: string; district: string | null; status: string } }) => {
         store.seq += 1;
         const row: JobRow = {
           id: `job-${store.seq}`,
@@ -37,7 +39,8 @@ vi.mock("@/lib/db", () => ({
         };
         store.jobs.set(row.id, row);
         return row;
-      }),
+        },
+      ),
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => store.jobs.get(where.id) ?? null),
       update: vi.fn(async ({ where, data }: { where: { id: string }; data: Partial<JobRow> }) => {
         const row = { ...(store.jobs.get(where.id) as JobRow), ...data };
@@ -47,7 +50,7 @@ vi.mock("@/lib/db", () => ({
     },
   },
 }));
-vi.mock("@/lib/settings", () => ({ getSetting: vi.fn(async () => ["Lefkoşa", "Girne"]) }));
+vi.mock("@/lib/settings", () => ({ getSetting: vi.fn(async () => ["Lefkoşa", "Girne", "İstanbul", "Aksaray"]) }));
 vi.mock("@/lib/search-job", () => ({ startSearchJob }));
 
 const { POST } = await import("@/app/api/search/route");
@@ -92,6 +95,7 @@ function addJob(partial: Partial<JobRow> & { id: string }): JobRow {
   const row: JobRow = {
     query: "berber",
     city: "Lefkoşa",
+    district: null,
     status: "RUNNING",
     scanned: 0,
     withoutWebsite: 0,
@@ -122,15 +126,56 @@ describe("POST /api/search", () => {
     expect(res.status).toBe(201);
     const body = (await res.json()) as { data: { jobId: string } };
     expect(body.data.jobId).toBe("job-1");
-    expect(store.jobs.get("job-1")).toMatchObject({ query: "berber", city: "Lefkoşa", status: "RUNNING" });
+    expect(store.jobs.get("job-1")).toMatchObject({
+      query: "berber",
+      city: "Lefkoşa",
+      district: null,
+      status: "RUNNING",
+    });
     expect(startSearchJob).toHaveBeenCalledWith(
       { jobId: "job-1", query: "berber", city: "Lefkoşa" },
       expect.objectContaining({ searchText: expect.any(Function) }),
     );
   });
 
+  it("geçerli ilçe → 201; SearchJob'a ve yürütücüye district geçer", async () => {
+    const res = await post({ query: "berber", city: "İstanbul", district: " Kadıköy " });
+    expect(res.status).toBe(201);
+    const { jobId } = ((await res.json()) as { data: { jobId: string } }).data;
+    expect(store.jobs.get(jobId)).toMatchObject({ city: "İstanbul", district: "Kadıköy" });
+    expect(startSearchJob).toHaveBeenCalledWith(
+      { jobId, query: "berber", city: "İstanbul", district: "Kadıköy" },
+      expect.anything(),
+    );
+  });
+
+  it.each([[""], ["   "], [null]])("boş ilçe (%j) → il geneli (district null)", async (district) => {
+    const res = await post({ query: "berber", city: "İstanbul", district });
+    expect(res.status).toBe(201);
+    const { jobId } = ((await res.json()) as { data: { jobId: string } }).data;
+    expect(store.jobs.get(jobId)?.district).toBeNull();
+    expect(startSearchJob).toHaveBeenCalledWith(
+      { jobId, query: "berber", city: "İstanbul" },
+      expect.anything(),
+    );
+  });
+
+  it.each([
+    [{ query: "berber", city: "İstanbul", district: "Çankaya" }],
+    [{ query: "berber", city: "Lefkoşa", district: "Kadıköy" }],
+    [{ query: "berber", city: "İstanbul", district: "Yokköy" }],
+  ])("başka ilin / bilinmeyen ilçe → 400 UNKNOWN_DISTRICT (%j)", async (body) => {
+    const res = await post(body);
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: { code: string } }).error.code).toBe("UNKNOWN_DISTRICT");
+    expect(store.jobs.size).toBe(0);
+    expect(startSearchJob).not.toHaveBeenCalled();
+  });
+
   it.each([
     [{ query: "", city: "Lefkoşa" }],
+    [{ query: "berber", city: "İstanbul", district: 5 }],
+    [{ query: "berber", city: "İstanbul", district: "x".repeat(61) }],
     [{ query: "x".repeat(81), city: "Lefkoşa" }],
     [{ city: "Lefkoşa" }],
     [null],
@@ -141,7 +186,7 @@ describe("POST /api/search", () => {
   });
 
   it("listede olmayan şehir → 400", async () => {
-    const res = await post({ query: "berber", city: "Ankara" });
+    const res = await post({ query: "berber", city: "Ankara", district: "Çankaya" });
     expect(res.status).toBe(400);
     expect(((await res.json()) as { error: { code: string } }).error.code).toBe("UNKNOWN_CITY");
     expect(store.jobs.size).toBe(0);

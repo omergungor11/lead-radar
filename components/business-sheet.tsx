@@ -20,7 +20,7 @@ import { NotesPanel } from "@/components/businesses/notes-panel";
 import { TemplatePanel } from "@/components/businesses/template-panel";
 import { EditableEmailCell } from "@/components/businesses/editable-email-cell";
 import { StaleIndicator } from "@/components/businesses/stale-indicator";
-import { formatRatingReviews } from "@/components/businesses/format";
+import { formatCityDistrict, formatRatingReviews } from "@/components/businesses/format";
 import { ApiRequestError, refreshBusiness } from "@/components/businesses/api";
 import { useBusinessDetailQuery } from "@/components/businesses/use-business-detail-query";
 import { waLink } from "@/lib/phone";
@@ -91,7 +91,7 @@ export function BusinessSheet({ id, open, onOpenChange }: BusinessSheetProps) {
               </SheetTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm text-muted-foreground">
-                  {categoryLabel(business.primaryType)}
+                  {categoryLabel(business.primaryType)} · {formatCityDistrict(business.city, business.district)}
                 </span>
                 <ScoreBadge score={business.score} band={business.band} />
                 <StatusSelect id={business.id} status={business.status} />

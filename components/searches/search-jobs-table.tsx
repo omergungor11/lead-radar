@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatCityDistrict } from "@/components/businesses/format";
 import type { SearchJobDto } from "@/lib/types";
 import { tr } from "@/lib/tr";
 
@@ -89,7 +90,7 @@ export function SearchJobsTable({ jobs, isLoading, emptyLabel }: SearchJobsTable
         {jobs.map((job) => (
           <TableRow key={job.id}>
             <TableCell className="font-medium">{job.query}</TableCell>
-            <TableCell>{job.city}</TableCell>
+            <TableCell>{formatCityDistrict(job.city, job.district)}</TableCell>
             <TableCell>{statusBadge(job.status)}</TableCell>
             <TableCell className="text-right">{job.scanned}</TableCell>
             <TableCell className="text-right">{job.withoutWebsite}</TableCell>

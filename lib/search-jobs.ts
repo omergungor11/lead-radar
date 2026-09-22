@@ -23,6 +23,7 @@ type JobRow = Pick<
   | "id"
   | "query"
   | "city"
+  | "district"
   | "status"
   | "scanned"
   | "withoutWebsite"
@@ -38,6 +39,7 @@ export function toSearchJobDto(job: JobRow): SearchJobDto {
     id: job.id,
     query: job.query,
     city: job.city,
+    district: job.district,
     status: isSearchJobStatus(job.status) ? job.status : "FAILED",
     scanned: job.scanned,
     withoutWebsite: job.withoutWebsite,

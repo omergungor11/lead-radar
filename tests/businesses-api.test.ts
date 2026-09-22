@@ -9,6 +9,7 @@ interface BusinessRow {
   types: string;
   address: string | null;
   city: string;
+  district: string | null;
   phone: string | null;
   phoneE164: string | null;
   email: string | null;
@@ -153,6 +154,7 @@ function business(id: string, over: Partial<BusinessRow> = {}): BusinessRow {
     types: JSON.stringify(["barber_shop", "establishment"]),
     address: "Dereboyu Cd. 1",
     city: "Lefkoşa",
+    district: null,
     phone: "0392 228 12 34",
     phoneE164: "+903922281234",
     email: null,
@@ -214,18 +216,21 @@ beforeEach(() => {
 
 describe("parseBusinessFilters", () => {
   it("varsayılanlar; boş parametreler yok sayılır", () => {
-    const r = parseBusinessFilters(new URLSearchParams("city=&q=%20%20"));
+    const r = parseBusinessFilters(new URLSearchParams("city=&district=&q=%20%20"));
     expect(r).toEqual({ success: true, data: { sort: "score", page: 1, pageSize: 50 } });
   });
 
   it("tüm alanlar; sayılar coerce", () => {
     const r = parseBusinessFilters(
-      new URLSearchParams("city=Girne&category=cafe&status=CONTACTED&band=WARM&q=%20berber%20&sort=recent&page=3&pageSize=200"),
+      new URLSearchParams(
+        "city=Girne&district=%20Kad%C4%B1k%C3%B6y%20&category=cafe&status=CONTACTED&band=WARM&q=%20berber%20&sort=recent&page=3&pageSize=200",
+      ),
     );
     expect(r).toEqual({
       success: true,
       data: {
         city: "Girne",
+        district: "Kadıköy",
         category: "cafe",
         status: "CONTACTED",
         band: "WARM",
@@ -257,6 +262,10 @@ describe("buildWhere / buildOrderBy", () => {
       primaryType: "cafe",
       status: "NEW",
       score: { gte: 80 },
+    });
+    expect(buildWhere({ city: "İstanbul", district: "Kadıköy" })).toEqual({
+      city: "İstanbul",
+      district: "Kadıköy",
     });
     expect(buildWhere({ band: "WARM" })).toEqual({ score: { gte: 50, lt: 80 } });
     expect(buildWhere({ band: "COLD" })).toEqual({ score: { lt: 50 } });
@@ -298,6 +307,9 @@ describe("toBusinessListItem / toBusinessDetail", () => {
     expect(item.thumbnailUrl).toBe("/api/photo?name=places%2Fx%2Fphotos%2F1");
     expect(JSON.stringify(item)).not.toContain("AIza");
 
+    expect(item.district).toBeNull();
+    expect(toBusinessListItem(business("b3", { district: "Kadıköy" }), now).district).toBe("Kadıköy");
+
     const fresh = toBusinessListItem(business("b2", { lastSyncedAt: new Date(now.getTime() - 29 * DAY) }), now);
     expect(fresh.isStale).toBe(false);
   });
@@ -336,6 +348,7 @@ describe("toBusinessListItem / toBusinessDetail", () => {
     expect(d.notes.map((n) => n.body)).toEqual(["yeni", "eski"]);
     expect(d.statusChanges.map((s) => s.id)).toEqual(["s2", "s1"]);
     expect(d.firstSeenAt).toBe("2026-09-01T00:00:00.000Z");
+    expect(d.district).toBeNull();
   });
 });
 
@@ -359,6 +372,22 @@ describe("GET /api/businesses", () => {
       }),
     );
     expect(dbMock.business.count).toHaveBeenCalledWith({ where: { city: "Girne", score: { gte: 80 } } });
+  });
+
+  it("district filtresi + listSelect district içerir", async () => {
+    business("b1", { city: "İstanbul", district: "Kadıköy" });
+    const res = await listRoute(
+      new Request("http://localhost/api/businesses?city=%C4%B0stanbul&district=Kad%C4%B1k%C3%B6y"),
+    );
+    expect(res.status).toBe(200);
+    const body = await json<{ data: BusinessListItem[] }>(res);
+    expect(body.data[0]?.district).toBe("Kadıköy");
+    expect(dbMock.business.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { city: "İstanbul", district: "Kadıköy" },
+        select: expect.objectContaining({ district: true }),
+      }),
+    );
   });
 
   it("geçersiz filtre → 400 VALIDATION_ERROR", async () => {

@@ -15,6 +15,7 @@ model Business {
   types               String   // JSON string[]
   address             String?
   city                String
+  district            String?  // arama ilçe bazlıysa (Türkiye); ilk bulunduğu ilçe
   phone               String?  // national format, görüntüleme için
   phoneE164           String?  // wa.me için
   email               String?  // elle girilir
@@ -38,6 +39,7 @@ model Business {
   statusChanges       StatusChange[]
 
   @@index([city, status])
+  @@index([city, district])
   @@index([score])
 }
 
@@ -45,6 +47,7 @@ model SearchJob {
   id              String     @id @default(cuid())
   query           String
   city            String
+  district        String?
   status          String     @default("RUNNING") // RUNNING | DONE | FAILED
   scanned         Int        @default(0)
   withoutWebsite  Int        @default(0)

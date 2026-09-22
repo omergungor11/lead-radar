@@ -8,7 +8,9 @@ const mocks = vi.hoisted(() => ({
   jobUpdate: vi.fn<(args: { where: { id: string }; data: Record<string, unknown> }) => Promise<object>>(
     async () => ({}),
   ),
-  upsertBusiness: vi.fn<(d: PlaceDetails, city: string, jobId: string | null) => Promise<object>>(
+  upsertBusiness: vi.fn<
+    (d: PlaceDetails, city: string, jobId: string | null, options?: { district?: string | null }) => Promise<object>
+  >(
     async () => ({}),
   ),
 }));
@@ -45,6 +47,18 @@ describe("runSearchJob (mock istemci)", () => {
     for (const call of mocks.upsertBusiness.mock.calls) {
       expect(call[1]).toBe("Lefkoşa");
       expect(call[2]).toBe("job-1");
+      expect(call[3]?.district).toBeNull();
+    }
+  });
+
+  it("ilçeli iş: Places sorgusu ilçe + il, upsert'e district geçer", async () => {
+    const client = createMockPlacesClient();
+    const searchSpy = vi.spyOn(client, "searchText");
+    await runSearchJob({ jobId: "job-d", query: "berber", city: "İstanbul", district: "Kadıköy" }, client);
+    expect(searchSpy).toHaveBeenCalledWith("berber Kadıköy İstanbul", undefined);
+    for (const call of mocks.upsertBusiness.mock.calls) {
+      expect(call[1]).toBe("İstanbul");
+      expect(call[3]?.district).toBe("Kadıköy");
     }
   });
 
@@ -121,6 +135,11 @@ describe("runSearchJob (mock istemci)", () => {
 describe("yardımcılar", () => {
   it("buildTextQuery", () => {
     expect(buildTextQuery(" berber ", "Lefkoşa")).toBe("berber Lefkoşa");
+    expect(buildTextQuery("berber", "Lefkoşa", null)).toBe("berber Lefkoşa");
+    expect(buildTextQuery("berber", "Lefkoşa", "  ")).toBe("berber Lefkoşa");
+    expect(buildTextQuery(" berber ", "İstanbul", " Kadıköy ")).toBe("berber Kadıköy İstanbul");
+    // "Merkez" ilçe → il merkezi
+    expect(buildTextQuery("berber", "Aksaray", "Merkez")).toBe("berber Aksaray merkez");
   });
 
   it("estimateCost 4 ondalığa yuvarlar", () => {

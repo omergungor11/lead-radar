@@ -41,6 +41,7 @@
 - Ortak DTO sözleşmesi `lib/types.ts` (client-safe) — agent'lar değiştirmez, orchestrator değiştirir
 - Şehir listesi DB'de (`Setting.cities`); `lib/config` değişince mevcut DB güncellenmez → birleştirme gerekir (seed ezmez). Gruplama `KKTC_CITIES` / `TURKEY_PROVINCES` üyeliğine göre, kullanıcı eklemeleri "Diğer"
 - Mock modda Türkiye şehri aranırsa fixture filtre tutmaz → 20 kaydın hepsi gelir (anlamsız); Türkiye için gerçek anahtar
+- İlçe: `lib/districts.ts` üretilmiş veri (yeniden üretmek için turkey-neighbourhoods `getDistrictsByCityCode`). `isDistrictOf` yazıma duyarlı — client listedeki yazımı aynen yollar. Mock'ta ilçe adı KKTC şehriyle aynıysa (Aksaray/Güzelyurt) yanlış eşleşir — önemsiz
 - Tarayıcı doğrulaması: `pnpm dev --port 3200` + Playwright script (şifre `.env`'den), sonra süreci kapat
 
 ## Working Credentials (Dev)

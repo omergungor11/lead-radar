@@ -39,6 +39,8 @@ export interface BusinessListItem {
   name: string;
   primaryType: string | null;
   city: string;
+  /** İlk bulunduğu ilçe araması (Türkiye); yoksa null */
+  district: string | null;
   address: string | null;
   phone: string | null;
   phoneE164: string | null;
@@ -78,12 +80,13 @@ export type BusinessSort = (typeof BUSINESS_SORTS)[number];
 
 /**
  * `GET /api/businesses` ve `GET /api/export` aynı query parametrelerini alır:
- * `city, category (primaryType), status, band (HOT|WARM|COLD), q (ad/telefon içerir),
+ * `city, district (city ile birlikte anlamlı), category (primaryType), status, band (HOT|WARM|COLD), q (ad/telefon içerir),
  * sort (varsayılan score, hepsi azalan), page (1'den), pageSize (varsayılan 50, max 200)`.
  * Export ek olarak `ids=a,b,c` alır (verilirse filtre yerine yalnız bunlar).
  */
 export interface BusinessFilters {
   city?: string;
+  district?: string;
   category?: string;
   status?: Status;
   band?: ScoreBand;
@@ -132,6 +135,7 @@ export interface SearchJobDto {
   id: string;
   query: string;
   city: string;
+  district: string | null;
   status: SearchJobStatus;
   scanned: number;
   withoutWebsite: number;

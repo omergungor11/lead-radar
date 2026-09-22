@@ -12,11 +12,16 @@ interface UpsertArgs {
 }
 
 const mocks = vi.hoisted(() => ({
-  upsert: vi.fn(async (args: UpsertArgs) => ({ id: "b1", ...args.create })),
+  upsert: vi.fn(async (args: UpsertArgs): Promise<Record<string, unknown>> => ({
+    id: "b1",
+    district: null,
+    ...args.create,
+  })),
+  updateMany: vi.fn(async () => ({ count: 1 })),
   getSetting: vi.fn(async () => ["restaurant"]),
 }));
 
-vi.mock("@/lib/db", () => ({ db: { business: { upsert: mocks.upsert } } }));
+vi.mock("@/lib/db", () => ({ db: { business: { upsert: mocks.upsert, updateMany: mocks.updateMany } } }));
 vi.mock("@/lib/settings", () => ({ getSetting: mocks.getSetting }));
 
 const { upsertBusiness, mapDetailsToFields } = await import("@/lib/ingest");
@@ -49,6 +54,7 @@ const DETAILS: PlaceDetails = {
 
 beforeEach(() => {
   mocks.upsert.mockClear();
+  mocks.updateMany.mockClear();
   mocks.getSetting.mockClear();
 });
 
@@ -122,6 +128,43 @@ describe("upsertBusiness", () => {
     expect(args?.update).not.toHaveProperty("searchJobId");
     expect(args?.create).not.toHaveProperty("searchJobId");
     expect(mocks.getSetting).not.toHaveBeenCalled();
+  });
+});
+
+describe("upsertBusiness district", () => {
+  it("create: district yazılır, update'te yok; yeni kayıt → ek sorgu yok", async () => {
+    const b = await upsertBusiness(DETAILS, "İstanbul", "job-1", { bonusCategories: [], district: "Kadıköy" });
+    const args = mocks.upsert.mock.calls[0]?.[0];
+    expect(args?.create).toMatchObject({ city: "İstanbul", district: "Kadıköy" });
+    expect(args?.update).not.toHaveProperty("district");
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+    expect(b.district).toBe("Kadıköy");
+  });
+
+  it("mevcut kayıtta district dolu → korunur (komşu ilçe araması)", async () => {
+    mocks.upsert.mockResolvedValueOnce({ id: "b1", district: "Kadıköy" });
+    const b = await upsertBusiness(DETAILS, "İstanbul", "job-2", { bonusCategories: [], district: "Üsküdar" });
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+    expect(b.district).toBe("Kadıköy");
+  });
+
+  it("mevcut kayıtta district NULL → koşullu doldurulur", async () => {
+    mocks.upsert.mockResolvedValueOnce({ id: "b1", district: null });
+    const b = await upsertBusiness(DETAILS, "İstanbul", "job-3", { bonusCategories: [], district: "Üsküdar" });
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: "b1", district: null },
+      data: { district: "Üsküdar" },
+    });
+    expect(b.district).toBe("Üsküdar");
+  });
+
+  it("district verilmez (Yenile / il geneli) → district'e dokunulmaz", async () => {
+    mocks.upsert.mockResolvedValueOnce({ id: "b1", district: null });
+    await upsertBusiness(DETAILS, "İstanbul", null, { bonusCategories: [] });
+    const args = mocks.upsert.mock.calls[0]?.[0];
+    expect(args?.create).not.toHaveProperty("district");
+    expect(args?.update).not.toHaveProperty("district");
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 });
 

@@ -1,6 +1,6 @@
 // Place Details → Business upsert (placeId ile). Sunucu tarafı.
 // UPDATE'te yalnız Google alanları + skor + lastSyncedAt (+ searchJobId) yazılır;
-// kullanıcının `status`, `email`, `lastContactedAt`, notları ve `city` KORUNUR.
+// kullanıcının `status`, `email`, `lastContactedAt`, notları, `city` ve dolu `district` KORUNUR.
 
 import type { Business } from "@prisma/client";
 import { SETTING_KEYS } from "@/lib/config";
@@ -76,6 +76,12 @@ export interface UpsertOptions {
   /** Verilmezse DB'deki `bonusCategories` ayarı okunur (toplu işte bir kez okuyup geçin). */
   bonusCategories?: readonly string[];
   now?: Date;
+  /**
+   * Arama işinin ilçesi. CREATE'te yazılır; UPDATE'te yalnız mevcut kayıtta district NULL ise
+   * doldurulur (işletme komşu ilçe aramasında da çıkabilir → ilk bulunduğu ilçe korunur).
+   * Verilmezse / null → district'e dokunulmaz (Yenile).
+   */
+  district?: string | null;
 }
 
 /**
@@ -100,11 +106,14 @@ export async function upsertBusiness(
     lastSyncedAt: now,
   };
 
-  return db.business.upsert({
+  const district = options.district?.trim() || null;
+
+  const business = await db.business.upsert({
     where: { placeId: details.id },
     create: {
       placeId: details.id,
       city,
+      ...(district ? { district } : {}),
       ...googleData,
       firstSeenAt: now,
       ...(jobId ? { searchJobId: jobId } : {}),
@@ -114,4 +123,11 @@ export async function upsertBusiness(
       ...(jobId ? { searchJobId: jobId } : {}),
     },
   });
+
+  // Prisma upsert'te koşullu alan yok → NULL ise ayrıca doldur (create'te zaten dolu, no-op).
+  if (district && business.district === null) {
+    await db.business.updateMany({ where: { id: business.id, district: null }, data: { district } });
+    return { ...business, district };
+  }
+  return business;
 }
