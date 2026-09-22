@@ -9,14 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { apiFetch } from "@/components/api-client";
+import { CityCombobox } from "@/components/city-combobox";
 import { useSettingsQuery } from "@/components/settings/use-settings-query";
 import { tr } from "@/lib/tr";
 
@@ -105,22 +99,19 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
                 </Button>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground">{tr.searches.form.categoryHint}</p>
           </div>
 
           <div className="flex flex-col gap-2 sm:max-w-xs">
             <Label htmlFor="search-city">{tr.searches.form.cityLabel}</Label>
-            <Select value={city} onValueChange={setCity} disabled={isSubmitDisabled}>
-              <SelectTrigger id="search-city">
-                <SelectValue placeholder={tr.searches.form.cityPlaceholder} />
-              </SelectTrigger>
-              <SelectContent>
-                {cities.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CityCombobox
+              id="search-city"
+              cities={cities}
+              value={city || undefined}
+              onChange={(c) => setCity(c ?? "")}
+              placeholder={tr.searches.form.cityPlaceholder}
+              disabled={isSubmitDisabled}
+            />
           </div>
 
           <Button type="submit" disabled={isSubmitDisabled} className="w-fit">

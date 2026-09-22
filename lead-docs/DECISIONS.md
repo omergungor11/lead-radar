@@ -2,6 +2,13 @@
 
 > Her mimari/teknolojik karar buraya. En yeni en üstte.
 
+## D-007: Türkiye'nin 81 ili varsayılan şehir listesinde — 2026-09-22
+
+**Karar**: `DEFAULT_CITIES` = 6 KKTC şehri + 81 il (`lib/config.ts`: `KKTC_CITIES`, `TURKEY_PROVINCES`). Şehir seçici aranabilir ve KKTC / Türkiye / Diğer gruplu (`components/city-combobox.tsx`).
+**Gerekçe**: Kullanıcı: KKTC'de işletme sayısı az; Türkiye pazarı hemen gerekli.
+**Alternatifler**: İl + ilçe hiyerarşisi (~970 ilçe) — şimdilik yok; büyük illerde 60 sonuç sınırı için kullanıcı kategoriye ilçe yazar ("berber Kadıköy").
+**Etki**: `SETTING_MAX_ITEMS` 100 → 300. Mevcut DB'lerde seed ayarı ezmez → liste bir kerelik birleştirildi. Mock fixture yalnız KKTC; Türkiye aramaları gerçek anahtar ister.
+
 ## D-006: Orchestrator Fable, alt agent'lar opus/sonnet/haiku — 2026-09-22
 
 **Karar**: Ana oturum Fable; backend=opus, frontend/database=sonnet, devops/docs=haiku (`.claude/agents/*.md` frontmatter).

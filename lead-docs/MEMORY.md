@@ -39,6 +39,8 @@
 - Toast aksiyonları modal Sheet üstünde: `Toaster className="pointer-events-auto"` + Sheet `onInteractOutside` toaster'ı yok sayar
 - API istemcisi tek: `components/api-client.ts` (`apiFetch`, `apiFetchWithMeta`, `ApiRequestError` code taşır)
 - Ortak DTO sözleşmesi `lib/types.ts` (client-safe) — agent'lar değiştirmez, orchestrator değiştirir
+- Şehir listesi DB'de (`Setting.cities`); `lib/config` değişince mevcut DB güncellenmez → birleştirme gerekir (seed ezmez). Gruplama `KKTC_CITIES` / `TURKEY_PROVINCES` üyeliğine göre, kullanıcı eklemeleri "Diğer"
+- Mock modda Türkiye şehri aranırsa fixture filtre tutmaz → 20 kaydın hepsi gelir (anlamsız); Türkiye için gerçek anahtar
 - Tarayıcı doğrulaması: `pnpm dev --port 3200` + Playwright script (şifre `.env`'den), sonra süreci kapat
 
 ## Working Credentials (Dev)

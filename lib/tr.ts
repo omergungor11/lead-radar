@@ -204,6 +204,8 @@ export const tr = {
       ] as string[],
       cityLabel: "Şehir",
       cityPlaceholder: "Şehir seçin",
+      categoryHint:
+        "Google sorgu başına en fazla 60 sonuç verir — büyük şehirlerde ilçe de yazın (örn. \"berber Kadıköy\").",
       submit: "Tara",
       submitting: "Taranıyor…",
       validationError: "Kategori ve şehir zorunlu",
@@ -387,5 +389,13 @@ export const tr = {
       empty: "Henüz not yok",
       addError: "Not eklenemedi",
     },
+  },
+  cityPicker: {
+    placeholder: "Şehir seçin",
+    search: "Şehir ara…",
+    empty: "Şehir bulunamadı",
+    groupKktc: "KKTC",
+    groupTurkey: "Türkiye",
+    groupOther: "Diğer",
   },
 } as const;

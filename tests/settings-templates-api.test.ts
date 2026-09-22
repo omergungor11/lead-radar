@@ -88,6 +88,7 @@ import { GET as listTemplates, POST as createTemplate } from "@/app/api/template
 import { DELETE as deleteTemplate, PUT as updateTemplate } from "@/app/api/templates/[id]/route";
 import { POST as rescore } from "@/app/api/businesses/rescore/route";
 import { DEFAULT_CITIES } from "@/lib/config";
+import { SETTING_MAX_ITEMS } from "@/lib/settings";
 
 const OPT_OUT = 'Bu tür mesajlar almak istemiyorsanız "istemiyorum" yazmanız yeterli.';
 
@@ -189,7 +190,7 @@ describe("/api/settings/[key]", () => {
     ["string değil", { value: "Girne" }],
     ["sayı öğe", { value: [1] }],
     ["61 karakter", { value: ["a".repeat(61)] }],
-    ["101 öğe", { value: Array.from({ length: 101 }, (_, i) => `s${i}`) }],
+    ["max+1 öğe", { value: Array.from({ length: SETTING_MAX_ITEMS + 1 }, (_, i) => `s${i}`) }],
     ["bozuk JSON", "not-json"],
   ])("PUT 400: %s", async (_label, body) => {
     const res = await putSetting(jsonRequest("PUT", body), ctx({ key: "cities" }));
@@ -197,13 +198,15 @@ describe("/api/settings/[key]", () => {
     expect((await json<ErrorBody>(res)).error.code).toBe("VALIDATION_ERROR");
   });
 
-  it("PUT: 60 karakter (trim sonrası) ve 100 öğe kabul", async () => {
+  it("PUT: 60 karakter (trim sonrası) ve max öğe kabul", async () => {
     const res = await putSetting(
-      jsonRequest("PUT", { value: [`  ${"a".repeat(60)}  `, ...Array.from({ length: 99 }, (_, i) => `s${i}`)] }),
+      jsonRequest("PUT", {
+        value: [`  ${"a".repeat(60)}  `, ...Array.from({ length: SETTING_MAX_ITEMS - 1 }, (_, i) => `s${i}`)],
+      }),
       ctx({ key: "cities" }),
     );
     expect(res.status).toBe(200);
-    expect((await json<{ data: { value: string[] } }>(res)).data.value).toHaveLength(100);
+    expect((await json<{ data: { value: string[] } }>(res)).data.value).toHaveLength(SETTING_MAX_ITEMS);
   });
 });
 

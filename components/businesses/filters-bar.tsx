@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiFetch } from "@/components/api-client";
+import { CityCombobox } from "@/components/city-combobox";
 import type { SettingsData } from "@/components/settings/types";
 import { STATUSES } from "@/lib/status";
 import { tr } from "@/lib/tr";
@@ -71,22 +72,14 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
         />
       </div>
 
-      <Select
-        value={filters.city ?? ALL}
-        onValueChange={(v) => onChange({ city: v === ALL ? undefined : v })}
-      >
-        <SelectTrigger className="w-full sm:w-40" aria-label={tr.businesses.filters.cityLabel}>
-          <SelectValue placeholder={tr.businesses.filters.cityLabel} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL}>{tr.businesses.filters.cityAll}</SelectItem>
-          {(settings?.cities ?? []).map((city) => (
-            <SelectItem key={city} value={city}>
-              {city}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <CityCombobox
+        cities={settings?.cities ?? []}
+        value={filters.city}
+        onChange={(city) => onChange({ city })}
+        allLabel={tr.businesses.filters.cityAll}
+        aria-label={tr.businesses.filters.cityLabel}
+        className="sm:w-44"
+      />
 
       <Input
         value={filters.category ?? ""}

@@ -3,6 +3,7 @@
 ## 2026-09-22
 
 ### Added
+- Türkiye'nin 81 ili şehir listesinde; aranabilir, gruplu şehir seçici (Türkçe karakter duyarsız arama); arama formunda ilçe ipucu
 - TASK-105: Places (New) istemcisi (field mask, backoff, zod), mock fixture, SSE'li arama işi, anahtarsız foto proxy, mock seed, tek işletme "Yenile"
 - TASK-106/107: `/api/businesses*` (filtre, PATCH geçiş/onay/undo, notlar, toplu durum), tablo ekranı, detay sheet (şablon → WhatsApp → CONTACTED + Geri al)
 - TASK-108: Filtreli Excel export (14 sütun, telefon metin)

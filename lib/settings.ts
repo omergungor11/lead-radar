@@ -6,7 +6,8 @@ import { DEFAULT_BONUS_CATEGORIES, DEFAULT_CITIES, SETTING_KEYS, type SettingKey
 import { db } from "@/lib/db";
 
 export const SETTING_ITEM_MAX_LENGTH = 60;
-export const SETTING_MAX_ITEMS = 100;
+// 87 varsayılan şehir (KKTC + 81 il) + kullanıcının ekleyeceği ilçeler için pay
+export const SETTING_MAX_ITEMS = 300;
 
 const DEFAULTS: Readonly<Record<SettingKey, readonly string[]>> = {
   cities: DEFAULT_CITIES,
