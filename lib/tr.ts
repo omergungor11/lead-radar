@@ -233,6 +233,9 @@ export const tr = {
       submit: "Tara",
       submitting: "Taranıyor…",
       validationError: "Kategori ve şehir zorunlu",
+      categoryRequired: "Kategori yazın veya listeden seçin",
+      cityRequired: "Şehir seçin",
+      areaCityAuto: (city: string) => `Kayıt şehri: ${city} (haritadan belirlendi)`,
       placesWarning:
         "Places API anahtarı tanımlı değil — .env'e GOOGLE_PLACES_API_KEY ekleyin veya PLACES_MOCK=1 ile çalıştırın.",
       settingsLink: "Ayarlar'a git",

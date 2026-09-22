@@ -110,3 +110,31 @@ export function cityCenter(city: string | null | undefined): LatLng | null {
 export const SEARCH_RADIUS_MIN_M = 200;
 export const SEARCH_RADIUS_MAX_M = 50_000;
 export const SEARCH_RADIUS_DEFAULT_M = 2_000;
+
+/** İki nokta arası mesafe (metre) — haversine */
+export function distanceMeters(a: LatLng, b: LatLng): number {
+  const R = 6_371_000;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/**
+ * Noktaya en yakın şehir. Harita ile alan aramasında `Business.city` etiketini otomatik
+ * belirlemek için kullanılır (kullanıcı yine de değiştirebilir).
+ * `cities` verilirse yalnız o liste (DB'deki şehirler) içinden seçer.
+ */
+export function nearestCity(point: LatLng, cities?: readonly string[]): string | null {
+  const candidates = (cities ?? Object.keys(CITY_COORDS)).filter((c) => CITY_COORDS[c]);
+  let best: { city: string; d: number } | null = null;
+  for (const city of candidates) {
+    const coords = CITY_COORDS[city];
+    if (!coords) continue;
+    const d = distanceMeters(point, coords);
+    if (!best || d < best.d) best = { city, d };
+  }
+  return best?.city ?? null;
+}

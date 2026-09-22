@@ -27,6 +27,7 @@ import {
   SEARCH_RADIUS_MIN_M,
   SEARCH_RADIUS_MAX_M,
   SEARCH_RADIUS_DEFAULT_M,
+  nearestCity,
 } from "@/lib/geo";
 import type { SearchArea } from "@/lib/types";
 import { formatRadius } from "@/components/map/format-radius";
@@ -84,21 +85,31 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     const trimmedCategory = category.trim();
-    if (!trimmedCategory || !city) {
-      toast.error(tr.searches.form.validationError);
+    if (!trimmedCategory) {
+      toast.error(tr.searches.form.categoryRequired);
       return;
     }
     if (useMapArea && !area) {
       toast.error(tr.searches.form.areaNotSelected);
       return;
     }
+    if (!effectiveCity) {
+      toast.error(tr.searches.form.cityRequired);
+      return;
+    }
     mutation.mutate({
       query: trimmedCategory,
-      city,
-      district,
+      city: effectiveCity,
+      // ilçe yalnız metin aramasında anlamlı; alan modunda coğrafyayı daire belirler
+      district: useMapArea ? undefined : district,
       area: useMapArea && area ? area : undefined,
     });
   }
+
+  // Alan modunda şehir kullanıcıdan istenmez: daire merkezine en yakın şehir kayıt etiketi olur
+  // (kullanıcı şehir seçicisinden değiştirebilir). Böylece Business.city ve filtreler anlamlı kalır.
+  const areaCity = area ? nearestCity(area, cities.length > 0 ? cities : undefined) : null;
+  const effectiveCity = useMapArea ? (areaCity ?? city) : city;
 
   function handleCityChange(next: string | undefined) {
     setCity(next ?? "");
@@ -183,7 +194,7 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
               />
             </div>
 
-            {hasDistricts ? (
+            {hasDistricts && !useMapArea ? (
               <div className="flex flex-col gap-2 sm:w-56">
                 <Label htmlFor="search-district">{tr.searches.form.districtLabel}</Label>
                 <DistrictCombobox
@@ -237,6 +248,11 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
                     className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
+                {areaCity ? (
+                  <p className="text-xs text-muted-foreground">
+                    {tr.searches.form.areaCityAuto(areaCity)}
+                  </p>
+                ) : null}
               </div>
             ) : null}
           </div>

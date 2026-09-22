@@ -2,6 +2,9 @@
 
 ## 2026-09-22
 
+### Fixed
+- Harita ile alan aramasında şehir/ilçe zorunluluğu kalktı: kayıt şehri daire merkezine en yakın şehirden otomatik belirlenir, ilçe seçici gizlenir, uyarılar alan bazlı
+
 ### Added
 - İşletme silme: satır menüsü, toplu silme ve detay panelinden silme (onay diyaloglu; notlar + durum geçmişi cascade)
 - Harita ile alan araması: MapLibre + Carto altlık, merkez/yarıçap seçimi, Places locationRestriction; 87 şehir merkezi (`lib/geo.ts`)
