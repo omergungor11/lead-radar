@@ -23,7 +23,8 @@ test("giriş → arama → tablo → detay → şablon → export", async ({ pag
   // Arama (mock Places, SSE ilerleme)
   await page.getByRole("link", { name: "Aramalar" }).click();
   await page.getByRole("button", { name: "berber" }).click();
-  await page.getByRole("combobox").first().click();
+  await page.locator("#search-city").click();
+  await page.getByPlaceholder("Şehir ara…").fill("lefkosa");
   await page.getByRole("option", { name: "Lefkoşa" }).click();
   await page.getByRole("button", { name: "Tara" }).click();
   const results = page.getByRole("link", { name: "Sonuçları gör" });

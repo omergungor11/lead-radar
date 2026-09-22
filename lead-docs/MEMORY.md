@@ -42,6 +42,7 @@
 - Şehir listesi DB'de (`Setting.cities`); `lib/config` değişince mevcut DB güncellenmez → birleştirme gerekir (seed ezmez). Gruplama `KKTC_CITIES` / `TURKEY_PROVINCES` üyeliğine göre, kullanıcı eklemeleri "Diğer"
 - Mock modda Türkiye şehri aranırsa fixture filtre tutmaz → 20 kaydın hepsi gelir (anlamsız); Türkiye için gerçek anahtar
 - İlçe: `lib/districts.ts` üretilmiş veri (yeniden üretmek için turkey-neighbourhoods `getDistrictsByCityCode`). `isDistrictOf` yazıma duyarlı — client listedeki yazımı aynen yollar. Mock'ta ilçe adı KKTC şehriyle aynıysa (Aksaray/Güzelyurt) yanlış eşleşir — önemsiz
+- Arama kategori önerileri `lib/config.ts` `SEARCH_CATEGORY_GROUPS` / `SEARCH_QUICK_PICKS` (grup etiketleri `tr.searches.form.categoryGroups`). Bonus listesi DB'de — `DEFAULT_BONUS_CATEGORIES` değişirse mevcut DB'ye birleştir + rescore
 - Tarayıcı doğrulaması: `pnpm dev --port 3200` + Playwright script (şifre `.env`'den), sonra süreci kapat
 
 ## Working Credentials (Dev)

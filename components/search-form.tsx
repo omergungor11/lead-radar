@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/components/api-client";
 import { CityCombobox } from "@/components/city-combobox";
+import { SearchableCombobox } from "@/components/searchable-combobox";
+import { SEARCH_CATEGORY_GROUPS, SEARCH_QUICK_PICKS } from "@/lib/config";
 import { DistrictCombobox } from "@/components/district-combobox";
 import { useSettingsQuery } from "@/components/settings/use-settings-query";
 import { districtsOf } from "@/lib/districts";
@@ -20,6 +22,11 @@ interface SearchFormProps {
   disabled: boolean;
   onStarted: (jobId: string, city: string, district?: string) => void;
 }
+
+const CATEGORY_GROUPS = SEARCH_CATEGORY_GROUPS.map((g) => ({
+  label: tr.searches.form.categoryGroups[g.key],
+  items: g.items,
+}));
 
 export function SearchForm({ disabled, onStarted }: SearchFormProps) {
   const { data: settings } = useSettingsQuery();
@@ -87,15 +94,28 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="search-category">{tr.searches.form.categoryLabel}</Label>
-            <Input
-              id="search-category"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              placeholder={tr.searches.form.categoryPlaceholder}
-              disabled={isSubmitDisabled}
-            />
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                id="search-category"
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+                placeholder={tr.searches.form.categoryPlaceholder}
+                disabled={isSubmitDisabled}
+              />
+              <SearchableCombobox
+                groups={CATEGORY_GROUPS}
+                value={undefined}
+                onChange={(pick) => pick && setCategory(pick)}
+                placeholder={tr.searches.form.pickFromList}
+                searchPlaceholder={tr.searches.form.categorySearch}
+                emptyText={tr.searches.form.categoryEmpty}
+                disabled={isSubmitDisabled}
+                className="sm:w-48 sm:shrink-0"
+                aria-label={tr.searches.form.pickFromList}
+              />
+            </div>
             <div className="flex flex-wrap gap-1.5">
-              {tr.searches.form.quickPicks.map((pick) => (
+              {SEARCH_QUICK_PICKS.map((pick) => (
                 <Button
                   key={pick}
                   type="button"

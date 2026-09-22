@@ -99,6 +99,26 @@ export const TURKEY_PROVINCES: readonly string[] = [
 
 export const DEFAULT_CITIES: readonly string[] = [...KKTC_CITIES, ...TURKEY_PROVINCES];
 
+// Arama formundaki kategori önerileri (Google'a giden Türkçe arama terimi). Grup etiketleri tr.searches.form.categoryGroups.
+// Serbest metin de yazılabilir; bu liste yalnız öneri.
+export const SEARCH_CATEGORY_GROUPS = [
+  { key: "lodging", items: ["otel", "butik otel", "pansiyon", "apart otel", "motel", "hostel", "tatil köyü", "bungalov", "kamp alanı"] },
+  { key: "food", items: ["restoran", "kafe", "lokanta", "balık restoranı", "kebapçı", "pide salonu", "kahvaltı salonu", "pastane", "fırın", "tatlıcı", "dondurmacı", "bar", "meyhane", "catering"] },
+  { key: "beauty", items: ["berber", "kuaför", "güzellik salonu", "tırnak salonu", "epilasyon merkezi", "spa", "masaj salonu", "dövme stüdyosu"] },
+  { key: "health", items: ["diş kliniği", "diş hekimi", "estetik kliniği", "fizik tedavi merkezi", "psikolog", "diyetisyen", "veteriner", "optik", "eczane"] },
+  { key: "professional", items: ["avukat", "mali müşavir", "mimar", "iç mimar", "emlak ofisi", "sigorta acentesi", "seyahat acentesi", "fotoğrafçı", "matbaa", "reklam ajansı"] },
+  { key: "auto", items: ["oto servis", "oto yıkama", "oto galeri", "lastikçi", "oto kiralama", "oto ekspertiz"] },
+  { key: "home", items: ["tesisatçı", "elektrikçi", "boyacı", "tadilat", "nakliyat", "çilingir", "kuru temizleme", "halı yıkama", "mobilyacı"] },
+  { key: "retail", items: ["çiçekçi", "butik", "kuyumcu", "ayakkabıcı", "gözlükçü", "petshop", "kasap", "şarküteri", "hediyelik eşya"] },
+  { key: "education", items: ["spor salonu", "pilates stüdyosu", "yoga stüdyosu", "dans okulu", "sürücü kursu", "dil kursu", "müzik kursu", "dershane", "anaokulu"] },
+  { key: "events", items: ["düğün salonu", "organizasyon", "etkinlik mekanı"] },
+] as const satisfies readonly { key: string; items: readonly string[] }[];
+
+export type SearchCategoryGroupKey = (typeof SEARCH_CATEGORY_GROUPS)[number]["key"];
+
+// Formda çip olarak gösterilen en sık kullanılanlar
+export const SEARCH_QUICK_PICKS: readonly string[] = ["otel", "pansiyon", "restoran", "kafe", "berber", "kuaför", "güzellik salonu", "diş kliniği", "emlak ofisi", "oto servis"];
+
 // Places `primaryType` değerleri — "site ihtiyacı yüksek" kategoriler (PROMPT §2, +10 puan)
 export const DEFAULT_BONUS_CATEGORIES: readonly string[] = [
   "restaurant",
@@ -110,6 +130,12 @@ export const DEFAULT_BONUS_CATEGORIES: readonly string[] = [
   "spa",
   "real_estate_agency",
   "hotel",
+  "lodging",
+  "motel",
+  "guest_house",
+  "bed_and_breakfast",
+  "hostel",
+  "resort_hotel",
   "lawyer",
   "architect",
 ];
