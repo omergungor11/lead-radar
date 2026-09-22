@@ -6,6 +6,7 @@ import { EventEmitter } from "node:events";
 import type { SearchJob } from "@prisma/client";
 import {
   SEARCH_JOB_STATUSES,
+  type SearchArea,
   type SearchJobDto,
   type SearchJobStatus,
   type SearchProgress,
@@ -24,6 +25,9 @@ type JobRow = Pick<
   | "query"
   | "city"
   | "district"
+  | "lat"
+  | "lng"
+  | "radiusM"
   | "status"
   | "scanned"
   | "withoutWebsite"
@@ -35,12 +39,20 @@ type JobRow = Pick<
   | "finishedAt"
 >;
 
+/** Harita ile alan araması: üç alan da doluysa daire, aksi halde null (şehir/ilçe metniyle arama). */
+export function toSearchArea(job: Pick<JobRow, "lat" | "lng" | "radiusM">): SearchArea | null {
+  const { lat, lng, radiusM } = job;
+  if (lat == null || lng == null || radiusM == null) return null;
+  return { lat, lng, radiusM };
+}
+
 export function toSearchJobDto(job: JobRow): SearchJobDto {
   return {
     id: job.id,
     query: job.query,
     city: job.city,
     district: job.district,
+    area: toSearchArea(job),
     status: isSearchJobStatus(job.status) ? job.status : "FAILED",
     scanned: job.scanned,
     withoutWebsite: job.withoutWebsite,

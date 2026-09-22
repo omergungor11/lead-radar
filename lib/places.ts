@@ -7,6 +7,7 @@ import { getServerEnv } from "@/lib/env";
 import { PlacesError } from "@/lib/places-error";
 import { createMockPlacesClient } from "@/lib/places.mock";
 import { tr } from "@/lib/tr";
+import type { SearchArea } from "@/lib/types";
 
 const API_BASE = "https://places.googleapis.com/v1";
 
@@ -114,8 +115,31 @@ export interface TextSearchResult {
   nextPageToken?: string;
 }
 
+/** Places API (New) `locationRestriction.circle` — yarıçap metre cinsinden. */
+export interface CircleRestriction {
+  circle: {
+    center: { latitude: number; longitude: number };
+    radius: number;
+  };
+}
+
+export interface TextSearchOptions {
+  /** Verilirse arama bu daireyle sınırlanır; sorgu metnine şehir/ilçe eklenmez. */
+  locationRestriction?: CircleRestriction;
+}
+
+/** `SearchArea` → Places gövdesindeki `locationRestriction`. */
+export function circleRestriction(area: SearchArea): CircleRestriction {
+  return {
+    circle: {
+      center: { latitude: area.lat, longitude: area.lng },
+      radius: area.radiusM,
+    },
+  };
+}
+
 export interface PlacesClient {
-  searchText(query: string, pageToken?: string): Promise<TextSearchResult>;
+  searchText(query: string, pageToken?: string, options?: TextSearchOptions): Promise<TextSearchResult>;
   getDetails(placeId: string): Promise<PlaceDetails>;
   /** Kısa ömürlü googleusercontent URL'si — anahtar içermez. */
   getPhotoUri(name: string, maxWidthPx: number): Promise<string>;
@@ -196,13 +220,15 @@ export function createPlacesClient(apiKey: string, options: PlacesClientOptions 
   }
 
   return {
-    async searchText(query, pageToken) {
+    async searchText(query, pageToken, options) {
       const body: Record<string, unknown> = {
         textQuery: query,
         languageCode: "tr",
         pageSize: TEXT_SEARCH_PAGE_SIZE,
       };
       if (pageToken) body.pageToken = pageToken;
+      // Field mask değişmez; locationRestriction yalnız gövdede yer alır (ek SKU maliyeti yok).
+      if (options?.locationRestriction) body.locationRestriction = options.locationRestriction;
       const data = await request(
         `${API_BASE}/places:searchText`,
         { method: "POST", fieldMask: TEXT_SEARCH_FIELD_MASK, body },

@@ -142,6 +142,63 @@ describe("runSearchJob (mock istemci)", () => {
     expect(mocks.jobUpdate.mock.calls.at(-1)?.[0].data).toMatchObject({ linkOnly: 2, withoutWebsite: 3 });
   });
 
+  it("alan araması: sorgu metni yalnız kategori, locationRestriction gönderilir", async () => {
+    const client = createMockPlacesClient();
+    const searchSpy = vi.spyOn(client, "searchText");
+    const area = { lat: 35.1854, lng: 33.361, radiusM: 3000 };
+
+    await runSearchJob(
+      { jobId: "job-a", query: " berber ", city: "Lefkoşa", district: "Kadıköy", area },
+      client,
+    );
+
+    expect(searchSpy).toHaveBeenCalledWith("berber", undefined, {
+      locationRestriction: {
+        circle: { center: { latitude: 35.1854, longitude: 33.361 }, radius: 3000 },
+      },
+    });
+  });
+
+  it("alan araması: yalnız daire içindeki fixture'lar taranır", async () => {
+    const client = createMockPlacesClient();
+    // Girne merkezi 3 km: 3 Girne fixture'ı (04, 05, 06) + marina (17); Lefkoşa/Mağusa dışarıda
+    const near = await runSearchJob(
+      { jobId: "job-a1", query: "işletme", city: "Girne", area: { lat: 35.3396, lng: 33.3205, radiusM: 3000 } },
+      client,
+    );
+    expect(near).toMatchObject({ status: "DONE", scanned: 4, withoutWebsite: 4, linkOnly: 1, saved: 4 });
+    expect(mocks.upsertBusiness.mock.calls.map((c) => c[0].id).sort()).toEqual([
+      "mock-place-04",
+      "mock-place-05",
+      "mock-place-06",
+      "mock-place-17",
+    ]);
+
+    mocks.upsertBusiness.mockClear();
+    // Dar yarıçap (200 m) → yalnız Kordon Kafe (~180 m) kalır
+    const tiny = await runSearchJob(
+      { jobId: "job-a2", query: "işletme", city: "Girne", area: { lat: 35.3396, lng: 33.3205, radiusM: 200 } },
+      client,
+    );
+    expect(tiny).toMatchObject({ status: "DONE", scanned: 1, saved: 1 });
+    expect(mocks.upsertBusiness.mock.calls.map((c) => c[0].id)).toEqual(["mock-place-06"]);
+
+    mocks.upsertBusiness.mockClear();
+    // Çok büyük yarıçap → şehir metni yok sayılır, 20 kaydın tamamı
+    const wide = await runSearchJob(
+      { jobId: "job-a3", query: "işletme", city: "Girne", area: { lat: 35.2, lng: 33.4, radiusM: 50_000 } },
+      client,
+    );
+    expect(wide).toMatchObject({ status: "DONE", scanned: 20, withoutWebsite: 17, linkOnly: 2, saved: 17 });
+  });
+
+  it("area yoksa üçüncü argüman gönderilmez (mevcut imza korunur)", async () => {
+    const client = createMockPlacesClient();
+    const searchSpy = vi.spyOn(client, "searchText");
+    await runSearchJob({ jobId: "job-a4", query: "berber", city: "Lefkoşa", area: null }, client);
+    expect(searchSpy.mock.calls[0]).toEqual(["berber Lefkoşa", undefined]);
+  });
+
   it("hata → FAILED + mesaj + finishedAt", async () => {
     const client = createMockPlacesClient();
     vi.spyOn(client, "searchText").mockRejectedValue(new PlacesError("Kota aşıldı", 429));

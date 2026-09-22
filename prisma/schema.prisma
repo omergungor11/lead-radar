@@ -50,6 +50,9 @@ model SearchJob {
   query           String
   city            String
   district        String?
+  lat             Float?   // harita ile alan araması: daire merkezi
+  lng             Float?
+  radiusM         Int?     // daire yarıçapı (metre); null → şehir/ilçe metniyle arama
   status          String     @default("RUNNING") // RUNNING | DONE | FAILED
   scanned         Int        @default(0)
   withoutWebsite  Int        @default(0)

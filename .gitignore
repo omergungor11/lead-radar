@@ -28,3 +28,7 @@ test-results/
 *.log
 .idea/
 .vscode/
+
+# maplibre worker (postinstall ile node_modules/dist'ten kopyalanır)
+/public/maplibre-gl-worker.mjs
+/public/maplibre-gl-shared.mjs

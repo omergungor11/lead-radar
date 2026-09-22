@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ExternalLink, MessageCircle, Phone, RefreshCw } from "lucide-react";
+import { ExternalLink, MessageCircle, Phone, RefreshCw, Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -11,6 +12,16 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ScoreBadge } from "@/components/score-badge";
 import { StatusSelect } from "@/components/status-select";
 import { Gallery } from "@/components/businesses/gallery";
@@ -22,7 +33,7 @@ import { EditableEmailCell } from "@/components/businesses/editable-email-cell";
 import { StaleIndicator } from "@/components/businesses/stale-indicator";
 import { WebsiteBadge } from "@/components/website-badge";
 import { formatCityDistrict, formatRatingReviews } from "@/components/businesses/format";
-import { ApiRequestError, refreshBusiness } from "@/components/businesses/api";
+import { ApiRequestError, deleteBusiness, refreshBusiness } from "@/components/businesses/api";
 import { useBusinessDetailQuery } from "@/components/businesses/use-business-detail-query";
 import { waLink } from "@/lib/phone";
 import { categoryLabel } from "@/lib/categories";
@@ -37,6 +48,20 @@ interface BusinessSheetProps {
 export function BusinessSheet({ id, open, onOpenChange }: BusinessSheetProps) {
   const queryClient = useQueryClient();
   const { data: business, isLoading, isError } = useBusinessDetailQuery(id);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteBusiness(id as string),
+    onSuccess: () => {
+      toast.success(tr.businesses.delete.success(business?.name ?? ""));
+      queryClient.invalidateQueries({ queryKey: ["businesses"] });
+      setDeleteOpen(false);
+      onOpenChange(false);
+    },
+    onError: () => {
+      toast.error(tr.businesses.delete.error);
+    },
+  });
 
   const refreshMutation = useMutation({
     mutationFn: () => refreshBusiness(id as string),
@@ -213,9 +238,39 @@ export function BusinessSheet({ id, open, onOpenChange }: BusinessSheetProps) {
               <h3 className="text-sm font-medium">{tr.detail.notes.title}</h3>
               <NotesPanel id={business.id} notes={business.notes} />
             </section>
+
+            <section className="border-t pt-4">
+              <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="size-3.5" />
+                {tr.detail.delete.button}
+              </Button>
+            </section>
           </div>
         )}
       </SheetContent>
+
+      {business ? (
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{tr.businesses.delete.title}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {tr.businesses.delete.description(business.name)}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{tr.businesses.delete.cancel}</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate()}
+              >
+                {tr.businesses.delete.confirm}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : null}
     </Sheet>
   );
 }

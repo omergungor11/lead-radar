@@ -6,11 +6,17 @@
 import { PLACES_COST, PLACES_MAX_RESULTS, SETTING_KEYS } from "@/lib/config";
 import { db } from "@/lib/db";
 import { upsertBusiness } from "@/lib/ingest";
-import { PlacesError, TEXT_SEARCH_PAGE_SIZE, type PlacesClient } from "@/lib/places";
+import {
+  circleRestriction,
+  PlacesError,
+  TEXT_SEARCH_PAGE_SIZE,
+  type PlacesClient,
+  type TextSearchOptions,
+} from "@/lib/places";
 import { publishProgress } from "@/lib/search-jobs";
 import { getSetting } from "@/lib/settings";
 import { tr } from "@/lib/tr";
-import type { SearchProgress } from "@/lib/types";
+import type { SearchArea, SearchProgress } from "@/lib/types";
 import { classifyWebsite } from "@/lib/website";
 
 export const PROGRESS_EVERY = 5;
@@ -22,6 +28,11 @@ export interface SearchJobInput {
   city: string;
   /** Türkiye ilçesi (`isDistrictOf(city, district)` route'ta doğrulanır); yoksa il geneli */
   district?: string | null;
+  /**
+   * Harita ile seçilen daire. Verilirse coğrafyayı `locationRestriction` belirler; sorgu metni
+   * yalnız kategori olur. `city`/`district` bu durumda sadece kayıt/filtre etiketidir.
+   */
+  area?: SearchArea | null;
 }
 
 interface Counters {
@@ -117,11 +128,21 @@ export async function runSearchJob(input: SearchJobInput, client: PlacesClient):
 
   try {
     const bonusCategories = await getSetting(SETTING_KEYS.bonusCategories);
-    const textQuery = buildTextQuery(input.query, input.city, input.district);
+    const area = input.area ?? null;
+    // Alan aramasında coğrafyayı daire belirler → sorgu metnine şehir/ilçe eklenmez.
+    const textQuery = area
+      ? input.query.trim()
+      : buildTextQuery(input.query, input.city, input.district);
+    const options: TextSearchOptions | undefined = area
+      ? { locationRestriction: circleRestriction(area) }
+      : undefined;
     let pageToken: string | undefined;
 
     for (let page = 0; page < MAX_PAGES && c.scanned < PLACES_MAX_RESULTS; page++) {
-      const result = await client.searchText(textQuery, pageToken);
+      // Alan yoksa üçüncü argüman hiç gönderilmez (mevcut çağrı imzası korunur).
+      const result = options
+        ? await client.searchText(textQuery, pageToken, options)
+        : await client.searchText(textQuery, pageToken);
       c.textSearchCalls += 1;
 
       for (const place of result.places) {

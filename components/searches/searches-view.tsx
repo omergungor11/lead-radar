@@ -11,13 +11,14 @@ import { SearchProgressCard } from "./search-progress-card";
 import { SearchJobsTable } from "./search-jobs-table";
 import { useSearchProgress } from "./use-search-progress";
 import { apiFetch } from "@/components/api-client";
-import type { SearchJobDto } from "@/lib/types";
+import type { SearchArea, SearchJobDto } from "@/lib/types";
 import { tr } from "@/lib/tr";
 
 interface ActiveJob {
   id: string;
   city: string;
   district?: string;
+  area?: SearchArea;
 }
 
 export function SearchesView() {
@@ -36,7 +37,12 @@ export function SearchesView() {
     if (attachedFromHistory.current || activeJob || !jobs) return;
     const running = jobs.find((job) => job.status === "RUNNING");
     if (running) {
-      setActiveJob({ id: running.id, city: running.city, district: running.district ?? undefined });
+      setActiveJob({
+        id: running.id,
+        city: running.city,
+        district: running.district ?? undefined,
+        area: running.area ?? undefined,
+      });
     }
     attachedFromHistory.current = true;
   }, [jobs, activeJob]);
@@ -49,11 +55,16 @@ export function SearchesView() {
     <div className="flex flex-col gap-6">
       <SearchForm
         disabled={isJobRunning}
-        onStarted={(jobId, city, district) => setActiveJob({ id: jobId, city, district })}
+        onStarted={(jobId, city, district, area) => setActiveJob({ id: jobId, city, district, area })}
       />
 
       {activeJob ? (
-        <SearchProgressCard progress={progress} city={activeJob.city} district={activeJob.district} />
+        <SearchProgressCard
+          progress={progress}
+          city={activeJob.city}
+          district={activeJob.district}
+          area={activeJob.area}
+        />
       ) : null}
 
       <Card>

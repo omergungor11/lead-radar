@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Bellek içi sahte Prisma — sadece bu route'ların kullandığı çağrılar ve argüman şekilleri.
@@ -66,6 +67,8 @@ const dbMock = vi.hoisted(() => ({
     count: vi.fn(),
     findUnique: vi.fn(),
     update: vi.fn(),
+    delete: vi.fn(),
+    deleteMany: vi.fn(),
   },
   statusChange: { findFirst: vi.fn(), create: vi.fn(), delete: vi.fn() },
   note: { create: vi.fn() },
@@ -102,6 +105,31 @@ function installDb(): void {
       return row;
     },
   );
+  // Gerçek şemada Note/StatusChange `onDelete: Cascade` → sahte DB de aynı davranır.
+  const cascade = (businessId: string): void => {
+    store.notes = store.notes.filter((n) => n.businessId !== businessId);
+    store.changes = store.changes.filter((c) => c.businessId !== businessId);
+  };
+  dbMock.business.delete.mockImplementation(async ({ where }: { where: { id: string } }) => {
+    const row = store.businesses.get(where.id);
+    if (!row) throw new Error("P2025");
+    store.businesses.delete(where.id);
+    cascade(where.id);
+    return row;
+  });
+  dbMock.business.deleteMany.mockImplementation(
+    async ({ where }: { where?: { id?: { in: string[] } } }) => {
+      const ids = where?.id?.in ?? [...store.businesses.keys()];
+      let count = 0;
+      for (const id of ids) {
+        if (store.businesses.delete(id)) {
+          cascade(id);
+          count += 1;
+        }
+      }
+      return { count };
+    },
+  );
   dbMock.statusChange.findFirst.mockImplementation(
     async ({ where }: { where: { businessId: string; to?: string; id?: { not: string } } }) =>
       store.changes
@@ -133,9 +161,14 @@ function installDb(): void {
 }
 
 import { GET as listRoute } from "@/app/api/businesses/route";
-import { GET as detailRoute, PATCH as patchRoute } from "@/app/api/businesses/[id]/route";
+import {
+  DELETE as deleteRoute,
+  GET as detailRoute,
+  PATCH as patchRoute,
+} from "@/app/api/businesses/[id]/route";
 import { POST as notesRoute } from "@/app/api/businesses/[id]/notes/route";
 import { POST as bulkRoute } from "@/app/api/businesses/bulk-status/route";
+import { POST as bulkDeleteRoute } from "@/app/api/businesses/bulk-delete/route";
 import {
   buildOrderBy,
   buildWhere,
@@ -620,5 +653,94 @@ describe("POST /api/businesses/bulk-status", () => {
   ])("400: %s", async (_label, body) => {
     const res = await bulkRoute(jsonRequest("POST", body));
     expect(res.status).toBe(400);
+  });
+});
+
+// ─── Silme ──────────────────────────────────────────────────────────────────
+
+describe("DELETE /api/businesses/[id]", () => {
+  it("200 { id }; kayıt ve (cascade) not + durum geçmişi gider", async () => {
+    business("b1");
+    business("b2");
+    store.notes.push({ id: "n1", businessId: "b1", body: "ara", createdAt: new Date() });
+    store.notes.push({ id: "n2", businessId: "b2", body: "kalsın", createdAt: new Date() });
+    store.changes.push({
+      id: "sc-1",
+      businessId: "b1",
+      from: "NEW",
+      to: "CONTACTED",
+      createdAt: new Date(),
+    });
+
+    const res = await deleteRoute(new Request("http://localhost/api/businesses/b1", { method: "DELETE" }), ctx("b1"));
+
+    expect(res.status).toBe(200);
+    expect(await json<{ data: { id: string } }>(res)).toEqual({ data: { id: "b1" } });
+    expect(store.businesses.has("b1")).toBe(false);
+    expect(store.businesses.has("b2")).toBe(true);
+    expect(store.notes.map((n) => n.id)).toEqual(["n2"]);
+    expect(store.changes).toHaveLength(0);
+  });
+
+  it("olmayan id → 404 NOT_FOUND, silme çağrılmaz", async () => {
+    const res = await deleteRoute(new Request("http://localhost/api/businesses/yok", { method: "DELETE" }), ctx("yok"));
+    expect(res.status).toBe(404);
+    expect((await json<ErrorBody>(res)).error.code).toBe("NOT_FOUND");
+    expect(dbMock.business.delete).not.toHaveBeenCalled();
+  });
+
+  it("şemada Note/StatusChange onDelete: Cascade", async () => {
+    const schema = await readFile(new URL("../prisma/schema.prisma", import.meta.url), "utf8");
+    const relations = [...schema.matchAll(/business\s+Business\s+@relation\([^)]*\)/g)].map((m) => m[0]);
+    expect(relations).toHaveLength(2);
+    for (const relation of relations) expect(relation).toContain("onDelete: Cascade");
+  });
+});
+
+describe("POST /api/businesses/bulk-delete", () => {
+  it("bulunanları siler, olmayanlar sessizce atlanır; tek deleteMany", async () => {
+    business("b1");
+    business("b2");
+    business("b3");
+    store.notes.push({ id: "n1", businessId: "b2", body: "x", createdAt: new Date() });
+
+    const res = await bulkDeleteRoute(jsonRequest("POST", { ids: ["b1", "b2", "yok", "b1"] }));
+
+    expect(res.status).toBe(200);
+    expect(await json<{ data: { deleted: number } }>(res)).toEqual({ data: { deleted: 2 } });
+    expect([...store.businesses.keys()]).toEqual(["b3"]);
+    expect(store.notes).toHaveLength(0);
+    expect(dbMock.business.deleteMany).toHaveBeenCalledTimes(1);
+    // Tekrarlı id'ler teke indirilir
+    expect(dbMock.business.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["b1", "b2", "yok"] } } });
+  });
+
+  it("hiçbiri yoksa deleted 0", async () => {
+    const { data } = await json<{ data: { deleted: number } }>(
+      await bulkDeleteRoute(jsonRequest("POST", { ids: ["yok"] })),
+    );
+    expect(data).toEqual({ deleted: 0 });
+  });
+
+  it.each([
+    ["ids boş", { ids: [] }],
+    ["501 id", { ids: Array.from({ length: 501 }, (_, i) => `b${i}`) }],
+    ["ids yok", {}],
+    ["ids dizi değil", { ids: "b1" }],
+    ["boş id", { ids: [""] }],
+    ["bozuk JSON", "not-json"],
+  ])("400: %s", async (_label, body) => {
+    business("b1");
+    const res = await bulkDeleteRoute(jsonRequest("POST", body));
+    expect(res.status).toBe(400);
+    expect((await json<ErrorBody>(res)).error.code).toBe("VALIDATION_ERROR");
+    expect(store.businesses.has("b1")).toBe(true);
+  });
+
+  it("500 id sınırı kabul edilir", async () => {
+    const res = await bulkDeleteRoute(
+      jsonRequest("POST", { ids: Array.from({ length: 500 }, (_, i) => `b${i}`) }),
+    );
+    expect(res.status).toBe(200);
   });
 });

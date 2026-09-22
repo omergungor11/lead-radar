@@ -6,6 +6,7 @@
 import type {
   PlaceDetails,
   PlacesClient,
+  TextSearchOptions,
   TextSearchPlace,
   TextSearchResult,
 } from "@/lib/places";
@@ -470,9 +471,42 @@ function toTextSearchPlace(d: PlaceDetails): TextSearchPlace {
   };
 }
 
+const EARTH_RADIUS_M = 6_371_008.8;
+
+/** İki koordinat arası büyük daire mesafesi (metre) — alan aramasının mock karşılığı. */
+export function haversineMeters(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+): number {
+  const toRad = (deg: number): number => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+function withinRestriction(details: PlaceDetails, options?: TextSearchOptions): boolean {
+  const circle = options?.locationRestriction?.circle;
+  if (!circle) return true;
+  const location = details.location;
+  if (!location) return false;
+  const distance = haversineMeters(
+    { lat: circle.center.latitude, lng: circle.center.longitude },
+    { lat: location.latitude, lng: location.longitude },
+  );
+  return distance <= circle.radius;
+}
+
 /**
- * Basit filtre: sorgu bir fixture şehrini içeriyorsa o şehrin işletmeleri (Lefkoşa/Girne 4, diğerleri 3),
- * değilse 17'nin tamamı. Siteli 2 + kapalı 1 kayıt her zaman eklenir (sayaçlar için). Sayfa boyu 10 (sayfalama denensin).
+ * Filtre iki türlü:
+ * - `locationRestriction` verilirse (harita ile alan araması) tüm fixture'lar merkeze olan
+ *   haversine mesafesine göre elenir; şehir metni yok sayılır. Yarıçap büyükse hepsi döner.
+ * - Verilmezse: sorgu bir fixture şehrini içeriyorsa o şehrin işletmeleri (Lefkoşa/Girne 4,
+ *   diğerleri 3), değilse 17'nin tamamı.
+ * Siteli 2 + kapalı 1 kayıt her zaman eklenir (sayaçlar için). Sayfa boyu 10 (sayfalama denensin).
  */
 export interface MockClientOptions {
   now?: () => Date;
@@ -487,13 +521,23 @@ export function createMockPlacesClient(options: MockClientOptions = {}): PlacesC
     latency > 0 ? new Promise((resolve) => setTimeout(resolve, latency)) : Promise.resolve();
 
   return {
-    async searchText(query: string, pageToken?: string): Promise<TextSearchResult> {
+    async searchText(
+      query: string,
+      pageToken?: string,
+      options?: TextSearchOptions,
+    ): Promise<TextSearchResult> {
       await delay();
       const { saved, excluded } = buildAll(now());
-      const q = foldTr(query);
-      const cities = [...new Set(saved.map((f) => f.city))].filter((c) => q.includes(foldTr(c)));
-      const matched = cities.length > 0 ? saved.filter((f) => cities.includes(f.city)) : saved;
-      const all = [...matched, ...excluded].map((f) => toTextSearchPlace(f.details));
+      let fixtures: MockFixture[];
+      if (options?.locationRestriction) {
+        fixtures = [...saved, ...excluded].filter((f) => withinRestriction(f.details, options));
+      } else {
+        const q = foldTr(query);
+        const cities = [...new Set(saved.map((f) => f.city))].filter((c) => q.includes(foldTr(c)));
+        const matched = cities.length > 0 ? saved.filter((f) => cities.includes(f.city)) : saved;
+        fixtures = [...matched, ...excluded];
+      }
+      const all = fixtures.map((f) => toTextSearchPlace(f.details));
 
       const offset = pageToken?.startsWith(PAGE_TOKEN_PREFIX)
         ? Number(pageToken.slice(PAGE_TOKEN_PREFIX.length)) || 0

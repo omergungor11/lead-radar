@@ -225,6 +225,11 @@ export const tr = {
       districtLabel: "İlçe (opsiyonel)",
       categoryHint:
         "Büyük şehirlerde ilçe seçin — Google her sorguda en fazla 60 sonuç verir.",
+      mapToggleLabel: "Haritadan alan seç",
+      mapHint:
+        "Haritaya tıklayarak arama merkezini belirleyin, işaretçiyi sürükleyerek taşıyabilirsiniz. Bu modda Google sorgusuna şehir/ilçe eklenmez, yalnızca çizdiğiniz alan taranır.",
+      radiusLabel: "Yarıçap",
+      areaNotSelected: "Haritadan bir merkez seçin",
       submit: "Tara",
       submitting: "Taranıyor…",
       validationError: "Kategori ve şehir zorunlu",
@@ -244,6 +249,7 @@ export const tr = {
       linkOnlySuffix: (linkOnly: number) => `(${linkOnly}'i yalnız sosyal medya / platform)`,
       summary: (scanned: number, withoutWebsite: number) =>
         `${scanned} tarandı, ${withoutWebsite} sitesiz`,
+      areaBadge: "Harita alanı",
     },
     history: {
       title: "Geçmiş aramalar",
@@ -264,6 +270,7 @@ export const tr = {
       statusDone: "Tamamlandı",
       statusFailed: "Başarısız",
       linkOnlySuffix: (linkOnly: number) => `(${linkOnly} sosyal)`,
+      areaSuffix: (radius: string) => `Harita alanı · ${radius}`,
     },
   },
   dashboard: {
@@ -324,6 +331,7 @@ export const tr = {
       score: "Lead Skoru",
       status: "Durum",
       lastContact: "Son temas",
+      actions: "İşlemler",
     },
     empty: {
       title: "Henüz işletme yok",
@@ -355,6 +363,22 @@ export const tr = {
       apply: "Uygula",
       bulkResult: (updated: number, skipped: number) => `${updated} güncellendi, ${skipped} atlandı`,
       bulkError: "Toplu işlem başarısız",
+      bulkDelete: "Seçilenleri sil",
+      bulkDeleteTitle: (n: number) => `${n} işletme silinecek`,
+      bulkDeleteDescription:
+        "Notlar ve durum geçmişi de silinir; işletmeler sonraki aramalarda yeniden bulunabilir.",
+      bulkDeleteSuccess: (n: number) => `${n} işletme silindi`,
+      bulkDeleteError: "Toplu silme başarısız",
+    },
+    delete: {
+      menuLabel: "Sil",
+      title: "İşletmeyi sil",
+      description: (name: string) =>
+        `"${name}" silinecek. Notlar ve durum geçmişi de silinir; işletme sonraki aramalarda yeniden bulunabilir.`,
+      cancel: "Vazgeç",
+      confirm: "Sil",
+      success: (name: string) => `"${name}" silindi`,
+      error: "İşletme silinemedi",
     },
   },
   detail: {
@@ -416,6 +440,9 @@ export const tr = {
       add: "Not ekle",
       empty: "Henüz not yok",
       addError: "Not eklenemedi",
+    },
+    delete: {
+      button: "İşletmeyi sil",
     },
   },
   website: {

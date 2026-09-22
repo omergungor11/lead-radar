@@ -1,12 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  circleRestriction,
   createPlacesClient,
   DETAILS_FIELD_MASK,
   getPlacesClient,
   PlacesError,
   TEXT_SEARCH_FIELD_MASK,
 } from "@/lib/places";
-import { createMockPlacesClient, getMockAllFixtures, getMockSavedFixtures } from "@/lib/places.mock";
+import {
+  createMockPlacesClient,
+  getMockAllFixtures,
+  getMockSavedFixtures,
+  haversineMeters,
+} from "@/lib/places.mock";
 import { classifyWebsite, isLeadWebsite } from "@/lib/website";
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -53,6 +59,28 @@ describe("createPlacesClient", () => {
       places: [{ id: "p1", displayName: { text: "A" }, businessStatus: "OPERATIONAL" }],
       nextPageToken: "tok2",
     });
+  });
+
+  it("alan araması: gövdeye locationRestriction eklenir, field mask değişmez", async () => {
+    const fetchMock = vi.fn<(url: string | URL | Request, init?: RequestInit) => Promise<Response>>(async () =>
+      jsonResponse({ places: [] }),
+    );
+    const client = createPlacesClient("KEY", { fetch: fetchMock as typeof fetch, sleep: noSleep });
+
+    await client.searchText("berber", undefined, {
+      locationRestriction: circleRestriction({ lat: 35.1854, lng: 33.361, radiusM: 2500 }),
+    });
+
+    const [, init] = fetchMock.mock.calls[0] ?? [];
+    expect(JSON.parse(String(init?.body))).toEqual({
+      textQuery: "berber",
+      languageCode: "tr",
+      pageSize: 20,
+      locationRestriction: {
+        circle: { center: { latitude: 35.1854, longitude: 33.361 }, radius: 2500 },
+      },
+    });
+    expect(headersOf(init)["X-Goog-FieldMask"]).toBe(TEXT_SEARCH_FIELD_MASK);
   });
 
   it("Details: GET, field mask, foto ve yorum en fazla 5", async () => {
@@ -189,6 +217,48 @@ describe("mock istemci", () => {
     expect(girne.places).toHaveLength(7); // 4 Girne + 2 siteli + 1 kapalı
     const iskele = await client.searchText("kafe İskele");
     expect(iskele.places).toHaveLength(6);
+  });
+
+  it("locationRestriction: mesafeye göre filtreler, şehir metnini yok sayar", async () => {
+    const client = createMockPlacesClient();
+    const girneCenter = { lat: 35.3396, lng: 33.3205 };
+    const restriction = (radiusM: number): { locationRestriction: ReturnType<typeof circleRestriction> } => ({
+      locationRestriction: circleRestriction({ ...girneCenter, radiusM }),
+    });
+
+    // Sorguda "Lefkoşa" geçse de coğrafyayı daire belirler
+    const near = await client.searchText("kafe Lefkoşa", undefined, restriction(3000));
+    expect(near.places.map((p) => p.id).sort()).toEqual([
+      "mock-place-04",
+      "mock-place-05",
+      "mock-place-06",
+      "mock-place-17",
+    ]);
+    expect(near.nextPageToken).toBeUndefined();
+
+    // Yarıçap büyükse hepsi (2 sayfa)
+    const wide = await client.searchText("kafe", undefined, restriction(200_000));
+    expect(wide.places).toHaveLength(10);
+    expect(wide.nextPageToken).toBeDefined();
+    const wide2 = await client.searchText("kafe", wide.nextPageToken, restriction(200_000));
+    expect(wide2.places).toHaveLength(10);
+
+    // Dar yarıçap → yalnız en yakın
+    const tiny = await client.searchText("kafe", undefined, restriction(200));
+    expect(tiny.places.map((p) => p.id)).toEqual(["mock-place-06"]);
+
+    // Restriction yoksa şehir eşleşmesi davranışı aynı kalır
+    const byCity = await client.searchText("kafe Girne");
+    expect(byCity.places).toHaveLength(7);
+  });
+
+  it("haversineMeters bilinen mesafeyi hesaplar", () => {
+    expect(haversineMeters({ lat: 35.3396, lng: 33.3205 }, { lat: 35.3396, lng: 33.3205 })).toBe(0);
+    // 1 derece enlem ≈ 111 km
+    expect(haversineMeters({ lat: 35, lng: 33 }, { lat: 36, lng: 33 })).toBeCloseTo(111_195, -2);
+    // Lefkoşa – Girne ≈ 17 km
+    expect(haversineMeters({ lat: 35.1854, lng: 33.361 }, { lat: 35.3396, lng: 33.3205 })).toBeGreaterThan(15_000);
+    expect(haversineMeters({ lat: 35.1854, lng: 33.361 }, { lat: 35.3396, lng: 33.3205 })).toBeLessThan(20_000);
   });
 
   it("son 30 günde yorumu olan 5 işletme var (göreli tarih)", () => {

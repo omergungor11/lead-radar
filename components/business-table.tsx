@@ -19,6 +19,7 @@ import { BusinessSheet } from "@/components/business-sheet";
 import { FiltersBar } from "@/components/businesses/filters-bar";
 import { PaginationBar } from "@/components/businesses/pagination-bar";
 import { BulkActionsBar } from "@/components/businesses/bulk-actions-bar";
+import { BusinessRowActions } from "@/components/businesses/business-row-actions";
 import { BusinessAvatar } from "@/components/businesses/business-avatar";
 import { PhoneCell } from "@/components/businesses/phone-cell";
 import { EditableEmailCell } from "@/components/businesses/editable-email-cell";
@@ -32,7 +33,7 @@ import { categoryLabel } from "@/lib/categories";
 import { tr } from "@/lib/tr";
 
 const SKELETON_ROWS = 8;
-const COLUMN_COUNT = 11;
+const COLUMN_COUNT = 12;
 
 export function BusinessTable() {
   const { filters, setFilter, setPage, detailId, openDetail, closeDetail } = useBusinessFilters();
@@ -83,6 +84,8 @@ export function BusinessTable() {
           selectedIds={[...selected]}
           filters={filters}
           onDone={() => setSelected(new Set())}
+          detailId={detailId}
+          onCloseDetail={closeDetail}
         />
       ) : (
         <div className="flex justify-end">
@@ -115,6 +118,9 @@ export function BusinessTable() {
               <TableHead>{tr.businesses.columns.score}</TableHead>
               <TableHead>{tr.businesses.columns.status}</TableHead>
               <TableHead>{tr.businesses.columns.lastContact}</TableHead>
+              <TableHead className="w-10">
+                <span className="sr-only">{tr.businesses.columns.actions}</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -202,6 +208,15 @@ export function BusinessTable() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(item.lastContactedAt)}
+                  </TableCell>
+                  <TableCell>
+                    <BusinessRowActions
+                      id={item.id}
+                      name={item.name}
+                      onDeleted={() => {
+                        if (detailId === item.id) closeDetail();
+                      }}
+                    />
                   </TableCell>
                 </TableRow>
               ))

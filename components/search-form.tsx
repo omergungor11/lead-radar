@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -9,6 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/components/api-client";
 import { CityCombobox } from "@/components/city-combobox";
 import { SearchableCombobox } from "@/components/searchable-combobox";
@@ -16,11 +19,27 @@ import { SEARCH_CATEGORY_GROUPS, SEARCH_QUICK_PICKS } from "@/lib/config";
 import { DistrictCombobox } from "@/components/district-combobox";
 import { useSettingsQuery } from "@/components/settings/use-settings-query";
 import { districtsOf } from "@/lib/districts";
+import {
+  cityCenter,
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  CITY_ZOOM,
+  SEARCH_RADIUS_MIN_M,
+  SEARCH_RADIUS_MAX_M,
+  SEARCH_RADIUS_DEFAULT_M,
+} from "@/lib/geo";
+import type { SearchArea } from "@/lib/types";
+import { formatRadius } from "@/components/map/format-radius";
 import { tr } from "@/lib/tr";
+
+const AreaMap = dynamic(() => import("@/components/map/area-map").then((m) => m.AreaMap), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[260px] w-full rounded-lg sm:h-[360px]" />,
+});
 
 interface SearchFormProps {
   disabled: boolean;
-  onStarted: (jobId: string, city: string, district?: string) => void;
+  onStarted: (jobId: string, city: string, district?: string, area?: SearchArea) => void;
 }
 
 const CATEGORY_GROUPS = SEARCH_CATEGORY_GROUPS.map((g) => ({
@@ -33,9 +52,14 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
   const [category, setCategory] = useState("");
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState<string | undefined>(undefined);
+  const [useMapArea, setUseMapArea] = useState(false);
+  const [area, setArea] = useState<SearchArea | null>(null);
+  const [radiusM, setRadiusM] = useState(SEARCH_RADIUS_DEFAULT_M);
 
   const cities = settings?.cities ?? [];
   const hasDistricts = districtsOf(city).length > 0;
+  const mapCenter = cityCenter(city) ?? DEFAULT_CENTER;
+  const mapZoom = city ? CITY_ZOOM : DEFAULT_ZOOM;
 
   useEffect(() => {
     if (!city && settings && settings.cities.length > 0) {
@@ -44,13 +68,13 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
   }, [settings, city]);
 
   const mutation = useMutation({
-    mutationFn: (input: { query: string; city: string; district?: string }) =>
+    mutationFn: (input: { query: string; city: string; district?: string; area?: SearchArea }) =>
       apiFetch<{ jobId: string }>("/api/search", {
         method: "POST",
         body: JSON.stringify(input),
       }),
     onSuccess: (data, variables) => {
-      onStarted(data.jobId, variables.city, variables.district);
+      onStarted(data.jobId, variables.city, variables.district, variables.area);
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -64,12 +88,27 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
       toast.error(tr.searches.form.validationError);
       return;
     }
-    mutation.mutate({ query: trimmedCategory, city, district });
+    if (useMapArea && !area) {
+      toast.error(tr.searches.form.areaNotSelected);
+      return;
+    }
+    mutation.mutate({
+      query: trimmedCategory,
+      city,
+      district,
+      area: useMapArea && area ? area : undefined,
+    });
   }
 
   function handleCityChange(next: string | undefined) {
     setCity(next ?? "");
     setDistrict(undefined);
+    setArea(null);
+  }
+
+  function handleRadiusChange(next: number) {
+    setRadiusM(next);
+    setArea((prev) => (prev ? { ...prev, radiusM: next } : prev));
   }
 
   const showPlacesWarning =
@@ -154,6 +193,50 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
                   onChange={setDistrict}
                   disabled={isSubmitDisabled}
                 />
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="search-map-toggle"
+                checked={useMapArea}
+                onCheckedChange={(checked) => setUseMapArea(checked === true)}
+                disabled={isSubmitDisabled}
+              />
+              <Label htmlFor="search-map-toggle" className="cursor-pointer font-normal">
+                {tr.searches.form.mapToggleLabel}
+              </Label>
+            </div>
+
+            {useMapArea ? (
+              <div className="flex flex-col gap-3 rounded-lg border border-border p-3">
+                <p className="text-xs text-muted-foreground">{tr.searches.form.mapHint}</p>
+                <AreaMap
+                  center={mapCenter}
+                  zoom={mapZoom}
+                  value={area}
+                  onChange={setArea}
+                  disabled={isSubmitDisabled}
+                />
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <Label htmlFor="search-radius">{tr.searches.form.radiusLabel}</Label>
+                    <span className="text-muted-foreground">{formatRadius(radiusM)}</span>
+                  </div>
+                  <input
+                    id="search-radius"
+                    type="range"
+                    min={SEARCH_RADIUS_MIN_M}
+                    max={SEARCH_RADIUS_MAX_M}
+                    step={100}
+                    value={radiusM}
+                    onChange={(event) => handleRadiusChange(Number(event.target.value))}
+                    disabled={isSubmitDisabled}
+                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
               </div>
             ) : null}
           </div>

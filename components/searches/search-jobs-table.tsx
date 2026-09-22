@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCityDistrict } from "@/components/businesses/format";
+import { formatRadius } from "@/components/map/format-radius";
 import type { SearchJobDto } from "@/lib/types";
 import { tr } from "@/lib/tr";
 
@@ -90,7 +91,16 @@ export function SearchJobsTable({ jobs, isLoading, emptyLabel }: SearchJobsTable
         {jobs.map((job) => (
           <TableRow key={job.id}>
             <TableCell className="font-medium">{job.query}</TableCell>
-            <TableCell>{formatCityDistrict(job.city, job.district)}</TableCell>
+            <TableCell>
+              <div className="flex flex-col">
+                <span>{formatCityDistrict(job.city, job.district)}</span>
+                {job.area ? (
+                  <span className="text-xs text-muted-foreground">
+                    {tr.searches.table.areaSuffix(formatRadius(job.area.radiusM))}
+                  </span>
+                ) : null}
+              </div>
+            </TableCell>
             <TableCell>{statusBadge(job.status)}</TableCell>
             <TableCell className="text-right">{job.scanned}</TableCell>
             <TableCell className="text-right">

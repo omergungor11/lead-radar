@@ -77,3 +77,16 @@ export function refreshBusiness(id: string): Promise<{ id: string; lastSyncedAt:
     method: "POST",
   });
 }
+
+export function deleteBusiness(id: string): Promise<{ id: string }> {
+  return request<{ id: string }>(`/api/businesses/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function bulkDeleteBusinesses(ids: string[]): Promise<{ deleted: number }> {
+  return request<{ deleted: number }>("/api/businesses/bulk-delete", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+}

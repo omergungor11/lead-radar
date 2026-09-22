@@ -1,5 +1,6 @@
 import type { EventEmitter } from "node:events";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SEARCH_RADIUS_MAX_M, SEARCH_RADIUS_MIN_M } from "@/lib/geo";
 import type { SearchProgress } from "@/lib/types";
 
 interface JobRow {
@@ -7,6 +8,9 @@ interface JobRow {
   query: string;
   city: string;
   district: string | null;
+  lat: number | null;
+  lng: number | null;
+  radiusM: number | null;
   status: string;
   scanned: number;
   withoutWebsite: number;
@@ -25,22 +29,34 @@ vi.mock("@/lib/db", () => ({
   db: {
     searchJob: {
       create: vi.fn(
-        async ({ data }: { data: { query: string; city: string; district: string | null; status: string } }) => {
-        store.seq += 1;
-        const row: JobRow = {
-          id: `job-${store.seq}`,
-          ...data,
-          scanned: 0,
-          withoutWebsite: 0,
-          linkOnly: 0,
-          saved: 0,
-          estimatedCost: 0,
-          error: null,
-          startedAt: new Date(),
-          finishedAt: null,
-        };
-        store.jobs.set(row.id, row);
-        return row;
+        async ({
+          data,
+        }: {
+          data: {
+            query: string;
+            city: string;
+            district: string | null;
+            lat: number | null;
+            lng: number | null;
+            radiusM: number | null;
+            status: string;
+          };
+        }) => {
+          store.seq += 1;
+          const row: JobRow = {
+            id: `job-${store.seq}`,
+            ...data,
+            scanned: 0,
+            withoutWebsite: 0,
+            linkOnly: 0,
+            saved: 0,
+            estimatedCost: 0,
+            error: null,
+            startedAt: new Date(),
+            finishedAt: null,
+          };
+          store.jobs.set(row.id, row);
+          return row;
         },
       ),
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => store.jobs.get(where.id) ?? null),
@@ -57,7 +73,7 @@ vi.mock("@/lib/search-job", () => ({ startSearchJob }));
 
 const { POST } = await import("@/app/api/search/route");
 const { GET: STREAM } = await import("@/app/api/search/[jobId]/stream/route");
-const { publishProgress } = await import("@/lib/search-jobs");
+const { publishProgress, toSearchJobDto } = await import("@/lib/search-jobs");
 
 const savedEnv = { ...process.env };
 
@@ -98,6 +114,9 @@ function addJob(partial: Partial<JobRow> & { id: string }): JobRow {
     query: "berber",
     city: "Lefkoşa",
     district: null,
+    lat: null,
+    lng: null,
+    radiusM: null,
     status: "RUNNING",
     scanned: 0,
     withoutWebsite: 0,
@@ -195,6 +214,73 @@ describe("POST /api/search", () => {
     expect(store.jobs.size).toBe(0);
   });
 
+  it("area → 201; daire SearchJob'a yazılır ve yürütücüye geçer", async () => {
+    const area = { lat: 35.1854, lng: 33.361, radiusM: 2000 };
+    const res = await post({ query: " berber ", city: "Lefkoşa", area });
+    expect(res.status).toBe(201);
+    const { jobId } = ((await res.json()) as { data: { jobId: string } }).data;
+    expect(store.jobs.get(jobId)).toMatchObject({
+      query: "berber",
+      city: "Lefkoşa",
+      district: null,
+      lat: 35.1854,
+      lng: 33.361,
+      radiusM: 2000,
+    });
+    expect(startSearchJob).toHaveBeenCalledWith(
+      { jobId, query: "berber", city: "Lefkoşa", area },
+      expect.anything(),
+    );
+  });
+
+  it("area + district birlikte: ilçe yalnız etiket olarak kaydedilir", async () => {
+    const area = { lat: 41.0, lng: 29.03, radiusM: 1500 };
+    const res = await post({ query: "berber", city: "İstanbul", district: "Kadıköy", area });
+    expect(res.status).toBe(201);
+    const { jobId } = ((await res.json()) as { data: { jobId: string } }).data;
+    expect(store.jobs.get(jobId)).toMatchObject({ district: "Kadıköy", lat: 41.0, radiusM: 1500 });
+    expect(startSearchJob).toHaveBeenCalledWith(
+      { jobId, query: "berber", city: "İstanbul", district: "Kadıköy", area },
+      expect.anything(),
+    );
+  });
+
+  it.each([[null], [undefined]])("area %j → alan araması yok (lat/lng/radiusM null)", async (area) => {
+    const res = await post({ query: "berber", city: "Lefkoşa", area });
+    expect(res.status).toBe(201);
+    const { jobId } = ((await res.json()) as { data: { jobId: string } }).data;
+    expect(store.jobs.get(jobId)).toMatchObject({ lat: null, lng: null, radiusM: null });
+    expect(startSearchJob).toHaveBeenCalledWith(
+      { jobId, query: "berber", city: "Lefkoşa" },
+      expect.anything(),
+    );
+  });
+
+  it.each([
+    ["yarıçap min altı", { lat: 35, lng: 33, radiusM: SEARCH_RADIUS_MIN_M - 1 }],
+    ["yarıçap max üstü", { lat: 35, lng: 33, radiusM: SEARCH_RADIUS_MAX_M + 1 }],
+    ["yarıçap ondalık", { lat: 35, lng: 33, radiusM: 1500.5 }],
+    ["yarıçap metin", { lat: 35, lng: 33, radiusM: "2000" }],
+    ["yarıçap yok", { lat: 35, lng: 33 }],
+    ["lat > 90", { lat: 90.1, lng: 33, radiusM: 2000 }],
+    ["lat < -90", { lat: -91, lng: 33, radiusM: 2000 }],
+    ["lng > 180", { lat: 35, lng: 180.5, radiusM: 2000 }],
+    ["lng < -180", { lat: 35, lng: -181, radiusM: 2000 }],
+    ["lat metin", { lat: "35", lng: 33, radiusM: 2000 }],
+    ["area dizi", []],
+  ])("geçersiz area (%s) → 400 VALIDATION_ERROR, iş yaratılmaz", async (_label, area) => {
+    const res = await post({ query: "berber", city: "Lefkoşa", area });
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: { code: string } }).error.code).toBe("VALIDATION_ERROR");
+    expect(store.jobs.size).toBe(0);
+    expect(startSearchJob).not.toHaveBeenCalled();
+  });
+
+  it.each([[SEARCH_RADIUS_MIN_M], [SEARCH_RADIUS_MAX_M]])("yarıçap sınırı %i kabul edilir", async (radiusM) => {
+    const res = await post({ query: "berber", city: "Lefkoşa", area: { lat: 35, lng: 33, radiusM } });
+    expect(res.status).toBe(201);
+  });
+
   it("anahtar yok + mock kapalı → 503, iş yaratılmaz", async () => {
     setEnv({ PLACES_MOCK: undefined, GOOGLE_PLACES_API_KEY: "" });
     const res = await post({ query: "berber", city: "Lefkoşa" });
@@ -279,5 +365,20 @@ describe("GET /api/search/[jobId]/stream", () => {
     expect(reg.emitter.listenerCount("run-2")).toBe(1);
     controller.abort();
     expect(reg.emitter.listenerCount("run-2")).toBe(0);
+  });
+});
+
+describe("toSearchJobDto area", () => {
+  it("üçü de doluysa nesne, eksikse null", () => {
+    const base = addJob({ id: "dto-1" });
+    expect(toSearchJobDto(base).area).toBeNull();
+    expect(toSearchJobDto({ ...base, lat: 35.2, lng: 33.4, radiusM: 3000 }).area).toEqual({
+      lat: 35.2,
+      lng: 33.4,
+      radiusM: 3000,
+    });
+    expect(toSearchJobDto({ ...base, lat: 35.2, lng: 33.4 }).area).toBeNull();
+    expect(toSearchJobDto({ ...base, lat: 35.2, radiusM: 3000 }).area).toBeNull();
+    expect(toSearchJobDto({ ...base, lng: 33.4, radiusM: 3000 }).area).toBeNull();
   });
 });

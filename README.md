@@ -36,6 +36,8 @@ Lead Radar, Google Haritalar'da kayıtlı olup **web sitesi olmayan** işletmele
 
 - **Excel Export** — Filtreli listeyi `.xlsx` olarak indir. Sütunlar: İşletme, Kategori, Şehir, Adres, Telefon (metin formatında, Excel'in sayıya çevirmesini engelle), E-posta, Puan, Yorum Sayısı, Lead Skoru, Durum, Son Temas, Google Maps URL, Fotoğraf URL, Notlar.
 
+- **Harita ile alan arama** — Aramalar sayfasında haritadan merkez + yarıçap (200 m – 50 km) seçilir; arama yalnız o daireyi tarar (büyük şehirlerde 60 sonuç sınırını aşmanın en pratik yolu). MapLibre + ücretsiz Carto altlığı, API anahtarı gerekmez.
+- **Silme** — Tek tek veya toplu silme (onay diyaloglu). Silinen işletme sonraki aramalarda yeniden bulunabilir; kalıcı dışlamak için "Atlandı" durumunu kullanın.
 - **Ayarlar** — Şehir listesi (ekle/sil), Kategori bonus listesi, Mesaj şablonları (CRUD), API anahtarı durumu (tanımlı/değil).
 
 ---

@@ -2,6 +2,20 @@
 
 > Her mimari/teknolojik karar buraya. En yeni en üstte.
 
+## D-009: Harita MapLibre + Carto, Google Maps JS değil — 2026-09-23
+
+**Karar**: Aramalar sayfasındaki harita MapLibre GL v6 + ücretsiz Carto Positron vektör stili. Haritada merkez + yarıçap seçilir, arama Places `locationRestriction` (circle) ile o daireyle sınırlanır; bu modda sorgu metnine şehir/ilçe eklenmez. Şehir merkezleri `lib/geo.ts` (Nominatim ile bir kerelik üretildi, ODbL).
+**Gerekçe**: Kullanıcıya soruldu; iki seçenek de onun hacminde ücretsiz. Google Maps JS ayrı bir tarayıcı anahtarı + referrer kısıtı + kota takibi ister; MapLibre anahtarsız ve $0. Alan araması 60 sonuç sınırını mahalle ölçeğine bölmeyi sağlar.
+**Alternatifler**: Google Maps JS (~$7/1.000 gösterim, ilk ~10.000 ücretsiz) — uydu görüntüsü ve tanıdık görünüm isterse geçilebilir; `AreaMap` bileşeni değiştirilir, sözleşme aynı kalır.
+**Etki**: `maplibre-gl` bağımlılığı; Turbopack worker sorunu için `public/maplibre-gl-worker.mjs` (postinstall ile kopyalanır) + `setWorkerUrl`.
+
+## D-010: İşletme silme kalıcı, yeniden bulunabilir — 2026-09-23
+
+**Karar**: `DELETE /api/businesses/[id]` ve `POST /api/businesses/bulk-delete` kaydı (notlar + durum geçmişiyle) tamamen siler. Silinen işletme aynı bölgede yeni arama yapılırsa upsert ile geri gelir.
+**Gerekçe**: Soft delete + "silinenler" görünümü MVP için fazladan durum; kalıcı dışlama zaten SKIPPED durumuyla yapılıyor (ve o durumda kayıt listede kalır).
+**Alternatifler**: Soft delete (`deletedAt`) veya placeId kara listesi — gerçekten gerekirse Phase 2.
+**Etki**: Onay diyaloglarında "sonraki aramalarda yeniden bulunabilir" uyarısı zorunlu.
+
 ## D-008: Sosyal medya / platform linki olanlar da lead — 2026-09-22
 
 **Karar**: Google `websiteUri` alanı `lib/website.ts#classifyWebsite` ile NONE / SOCIAL / PLATFORM / WEBSITE sınıflanır; yalnız WEBSITE elenir. Link `Business.websiteUri` + `websiteKind`'da saklanır, `SearchJob.linkOnly` sosyal/platform sayısını tutar.

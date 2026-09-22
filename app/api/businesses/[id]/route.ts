@@ -9,6 +9,7 @@ import {
 } from "@/lib/api";
 import {
   businessPatchSchema,
+  deleteBusiness,
   getBusinessDetail,
   patchBusiness,
   type PatchFailure,
@@ -51,4 +52,19 @@ export async function PATCH(
     return apiError(statusCode, result.code, message);
   }
   return ok(result.data);
+}
+
+/**
+ * Kaydı ve (cascade ile) notlarını + durum geçmişini siler.
+ * Not: silinen işletme sonraki aramada yeniden bulunup upsert edilebilir — bu bilinçli.
+ * Kalıcı olarak listeden çıkarmak için SKIPPED durumu kullanılır.
+ */
+export async function DELETE(
+  _request: Request,
+  { params }: RouteContext,
+): Promise<NextResponse<ApiSuccess<{ id: string }>> | NextResponse<ApiErrorBody>> {
+  const { id } = await params;
+  const deleted = await deleteBusiness(id);
+  if (!deleted) return apiError(404, "NOT_FOUND", tr.errors.businessNotFound);
+  return ok({ id });
 }

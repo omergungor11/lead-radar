@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { SearchProgress } from "@/lib/types";
+import type { SearchArea, SearchProgress } from "@/lib/types";
+import { formatRadius } from "@/components/map/format-radius";
 import { tr } from "@/lib/tr";
 
 const PROGRESS_MAX = 60;
@@ -14,9 +15,10 @@ interface SearchProgressCardProps {
   progress: SearchProgress | null;
   city: string;
   district?: string;
+  area?: SearchArea;
 }
 
-export function SearchProgressCard({ progress, city, district }: SearchProgressCardProps) {
+export function SearchProgressCard({ progress, city, district, area }: SearchProgressCardProps) {
   if (!progress) {
     return (
       <Card>
@@ -49,7 +51,14 @@ export function SearchProgressCard({ progress, city, district }: SearchProgressC
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          {title}
+          {area ? (
+            <Badge variant="outline">
+              {tr.searches.progress.areaBadge} · {formatRadius(area.radiusM)}
+            </Badge>
+          ) : null}
+        </CardTitle>
         <Badge variant={badgeVariant}>{badgeLabel}</Badge>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

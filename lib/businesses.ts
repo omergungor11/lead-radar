@@ -427,6 +427,30 @@ export async function addNote(businessId: string, body: string): Promise<NoteDto
   return toNoteDto(note);
 }
 
+// ─── Silme ──────────────────────────────────────────────────────────────────
+
+/**
+ * Tek işletmeyi siler. Not ve durum geçmişi şemada `onDelete: Cascade` → ayrıca silinmez.
+ * Bulunamazsa `false` (route 404 döner).
+ */
+export async function deleteBusiness(id: string): Promise<boolean> {
+  const existing = await db.business.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) return false;
+  await db.business.delete({ where: { id } });
+  return true;
+}
+
+export const bulkDeleteSchema = z.object({
+  ids: z.array(z.string().min(1).max(64)).min(1).max(BULK_MAX_IDS),
+});
+
+/** Toplu silme; bulunamayan id'ler sessizce atlanır. Dönen sayı gerçekten silinenlerdir. */
+export async function deleteBusinesses(ids: readonly string[]): Promise<number> {
+  const unique = [...new Set(ids)];
+  const { count } = await db.business.deleteMany({ where: { id: { in: unique } } });
+  return count;
+}
+
 export const bulkStatusSchema = z.object({
   ids: z.array(z.string().min(1).max(64)).min(1).max(BULK_MAX_IDS),
   status: z.enum(STATUSES),

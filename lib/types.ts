@@ -137,11 +137,25 @@ export interface BulkStatusResult {
 export const SEARCH_JOB_STATUSES = ["RUNNING", "DONE", "FAILED"] as const;
 export type SearchJobStatus = (typeof SEARCH_JOB_STATUSES)[number];
 
+/**
+ * `POST /api/search` gövdesi: `{ query, city, district?, area? }`.
+ * `area` verilirse Places çağrısı bu daireyle sınırlanır (locationRestriction) ve sorgu metnine
+ * şehir/ilçe eklenmez; `city` yine kayıt/filtre etiketi olarak zorunludur.
+ */
+export interface SearchArea {
+  lat: number;
+  lng: number;
+  /** metre — SEARCH_RADIUS_MIN_M..SEARCH_RADIUS_MAX_M (lib/geo.ts) */
+  radiusM: number;
+}
+
 export interface SearchJobDto {
   id: string;
   query: string;
   city: string;
   district: string | null;
+  /** Harita ile alan araması yapıldıysa dolu */
+  area: SearchArea | null;
   status: SearchJobStatus;
   scanned: number;
   /** Kendi sitesi olmayanlar (link yok + sosyal + platform) */
