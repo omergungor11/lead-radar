@@ -5,10 +5,10 @@
 | Phase | Name | Total | Done | In Progress | Review | Pending | Blocked |
 |-------|------|-------|------|-------------|--------|---------|---------|
 | 0 | Project Setup | 7 | 7 | 0 | 0 | 0 | 0 |
-| 1 | MVP — Panel + Places + Pipeline | 11 | 1 | 0 | 0 | 10 | 0 |
-| **Total** | | **18** | **8** | **0** | **0** | **10** | **0** |
+| 1 | MVP — Panel + Places + Pipeline | 11 | 3 | 0 | 0 | 8 | 0 |
+| **Total** | | **18** | **10** | **0** | **0** | **8** | **0** |
 
-**Progress**: 8/18 (44%)
+**Progress**: 10/18 (56%)
 
 ---
 
@@ -35,8 +35,8 @@ Spesifikasyon: `lead-plans/PROMPT.md`. Detaylar: `lead-tasks/phases/phase-1.md`.
 | ID | Task | Agent | Complexity | Status | Dependencies |
 |----|------|-------|-----------|--------|-------------|
 | TASK-101 | Next.js 15 + Tailwind + shadcn + Prisma + Vitest + Playwright iskeleti, `.env.example`, CI | orchestrator + devops | M | COMPLETED | TASK-007 |
-| TASK-102 | Prisma şema + migrate + seed (şablonlar, şehirler, mock işletmeler) | database | M | PENDING | TASK-101 |
-| TASK-103 | Auth — login sayfası, middleware, httpOnly cookie | backend + frontend | S | PENDING | TASK-101 |
+| TASK-102 | Prisma şema + migrate + seed (şablonlar, şehirler, mock işletmeler) | database | M | COMPLETED | TASK-101 |
+| TASK-103 | Auth — login sayfası, middleware, httpOnly cookie | backend + frontend | S | COMPLETED | TASK-101 |
 | TASK-104 | `lib/scoring` + `lib/status` + `lib/phone` — test-first | backend | M | PENDING | TASK-102 |
 | TASK-105 | `lib/places` + mock + `/api/search` + SSE + SearchJob | backend | L | PENDING | TASK-104 |
 | TASK-106 | `/api/businesses*` + tablo ekranı (filtre, sıralama, inline e-posta/durum, toplu işlem) | backend + frontend | L | PENDING | TASK-104 |

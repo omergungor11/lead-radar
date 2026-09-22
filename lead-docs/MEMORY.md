@@ -5,7 +5,7 @@
 
 ## Project Status
 - **Phase 0**: 7/7 ✓
-- **Phase 1**: 1/11 — TASK-101 iskelet bitti; sıradaki TASK-102 (şema) ∥ TASK-103 (auth)
+- **Phase 1**: 3/11 — TASK-101/102/103 bitti; sıradaki TASK-104 (skor/durum/telefon, backend) ∥ TASK-110 ayarlar UI iskeleti (frontend)
 
 ## Important Patterns
 - Places Text Search'te field mask sadece `id, displayName, websiteUri, businessStatus, nextPageToken`; Details yalnız sitesizlere → maliyet ~%60 düşer
@@ -21,6 +21,12 @@
 - `prisma init` `prisma.config.ts` üretir → silindi; varken `package.json#prisma.seed` ve `.env` otomatik yükleme çalışmaz
 - Port 3000 başka projelerin dev server'ıyla dolu olabilir → e2e: `E2E_PORT=3100 pnpm test:e2e` (yoksa Playwright yabancı sunucuyu yeniden kullanır)
 - zod **v4** kurulu (v3 değil): `z.email()`, `z.string().min(1, { error })`
+- `prisma init` kendi `.env`'sini yazar (sadece DATABASE_URL) → ADMIN_PASSWORD/SESSION_SECRET eksik kalır, instrumentation açılışta durdurur. Çözüm: `.env`'yi `.env.example`'dan üret
+- Seed şablon/ayarları `update: {}` ile upsert eder — kullanıcı düzenlemelerini ezmez; şablon metni değişirse DB'de elle güncelle
+- Şablon metinlerinde şehir eki kullanma (`{{sehir}}'de` → "Lefkoşa'de"); "{{sehir}} bölgesinde" nötr. WhatsApp şablonunda paragraf içi satır kırma yok
+- API route'ları `lib/api.ts` (`ok`, `apiError`, `validationError`, `readJson`) kullanır; env `lib/env.ts#getServerEnv()`
+- Middleware edge'de → `lib/auth.ts` sadece Web Crypto; Node `crypto` import etme
+- Açık risk: login'de rate limit yok, oturum iptali yok (SESSION_SECRET değiştir = herkes düşer). İnternete açmadan önce ele al
 - `app/page.tsx` geçici; TASK-109'da `(panel)/page.tsx` gelince silinmeli (aynı `/` rotası çakışır)
 
 ## Working Credentials (Dev)

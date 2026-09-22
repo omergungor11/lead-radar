@@ -29,18 +29,18 @@
 
 **Agent**: database
 **Complexity**: M
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-101
 
 ### Açıklama
 PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj şablonu, KKTC şehirleri
-(`Setting.cities`), bonus kategori listesi (`Setting.bonusCategories`); `PLACES_MOCK=1` iken 15 mock işletme.
+(`Setting.cities`), bonus kategori listesi (`Setting.bonusCategories`); `PLACES_MOCK=1` iken 15 mock işletme → **TASK-105'e ertelendi** (fixture + skorlama gerekiyor; seed.ts'de yer tutucu yorum var).
 
 ### Acceptance Criteria
-- [ ] `pnpm db:migrate` temiz DB'de çalışıyor
-- [ ] `pnpm db:seed` idempotent (2× çalıştır, kayıt sayısı değişmez)
-- [ ] `lib/db.ts` singleton
-- [ ] Şablon body'lerinde opt-out cümlesi var
+- [x] `pnpm db:migrate` temiz DB'de çalışıyor
+- [x] `pnpm db:seed` idempotent (2× çalıştır, kayıt sayısı değişmez)
+- [x] `lib/db.ts` singleton
+- [x] Şablon body'lerinde opt-out cümlesi var
 
 ---
 
@@ -48,13 +48,13 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 
 **Agent**: backend (`lib/auth.ts`, `middleware.ts`, `/api/auth/*`) + frontend (`/login`)
 **Complexity**: S
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-101
 
 ### Acceptance Criteria
-- [ ] Yanlış şifre → 401, doğru → httpOnly + SameSite=Lax cookie (HMAC imzalı, `SESSION_SECRET`)
-- [ ] `/api/*` (login hariç) ve panel sayfaları cookie'siz → 401 / `/login` redirect
-- [ ] `ADMIN_PASSWORD` tanımsızsa uygulama açılışta net hata verir
+- [x] Yanlış şifre → 401, doğru → httpOnly + SameSite=Lax cookie (HMAC imzalı, `SESSION_SECRET`)
+- [x] `/api/*` (login hariç) ve panel sayfaları cookie'siz → 401 / `/login` redirect
+- [x] `ADMIN_PASSWORD` tanımsızsa uygulama açılışta net hata verir
 
 ---
 
