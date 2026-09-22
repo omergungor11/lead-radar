@@ -87,6 +87,24 @@ describe("mapDetailsToFields", () => {
   });
 });
 
+describe("mapDetailsToFields websiteUri / websiteKind", () => {
+  it("link yok → null + NONE", () => {
+    expect(mapDetailsToFields(DETAILS)).toMatchObject({ websiteUri: null, websiteKind: "NONE" });
+    expect(mapDetailsToFields({ ...DETAILS, websiteUri: "  " })).toMatchObject({ websiteUri: null, websiteKind: "NONE" });
+  });
+
+  it("sosyal / platform / gerçek site sınıflandırılır", () => {
+    expect(mapDetailsToFields({ ...DETAILS, websiteUri: " https://www.instagram.com/test/ " })).toMatchObject({
+      websiteUri: "https://www.instagram.com/test/",
+      websiteKind: "SOCIAL",
+    });
+    expect(mapDetailsToFields({ ...DETAILS, websiteUri: "https://www.booking.com/hotel/cy/t.html" }).websiteKind).toBe(
+      "PLATFORM",
+    );
+    expect(mapDetailsToFields({ ...DETAILS, websiteUri: "https://testlokantasi.com" }).websiteKind).toBe("WEBSITE");
+  });
+});
+
 describe("upsertBusiness", () => {
   it("placeId ile upsert; update status/email/lastContactedAt/city/notlara dokunmaz", async () => {
     const now = new Date("2026-09-22T12:00:00Z");
@@ -120,6 +138,24 @@ describe("upsertBusiness", () => {
     // 120 yorum 30 + 4.6 puan 20 + 2 foto 5 + telefon 15 + 21 gün önce yorum 10 + kategori 10
     expect(args?.update.score).toBe(90);
     expect(mocks.getSetting).toHaveBeenCalledOnce();
+  });
+
+  it("websiteUri + websiteKind create ve update'te yazılır; yenilemede site edinmişse WEBSITE", async () => {
+    await upsertBusiness({ ...DETAILS, websiteUri: "https://www.instagram.com/test/" }, "Lefkoşa", "job-1", {
+      bonusCategories: [],
+    });
+    const first = mocks.upsert.mock.calls[0]?.[0];
+    for (const data of [first?.create, first?.update]) {
+      expect(data).toMatchObject({ websiteUri: "https://www.instagram.com/test/", websiteKind: "SOCIAL" });
+    }
+
+    await upsertBusiness({ ...DETAILS, websiteUri: "https://testlokantasi.com/" }, "Lefkoşa", null, {
+      bonusCategories: [],
+    });
+    expect(mocks.upsert.mock.calls[1]?.[0].update).toMatchObject({
+      websiteUri: "https://testlokantasi.com/",
+      websiteKind: "WEBSITE",
+    });
   });
 
   it("jobId null → searchJobId yazılmaz (Yenile mevcut bağı korur)", async () => {

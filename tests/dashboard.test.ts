@@ -10,6 +10,7 @@ const store = vi.hoisted(() => ({
     status: string;
     scanned: number;
     withoutWebsite: number;
+    linkOnly: number;
     saved: number;
     estimatedCost: number;
     error: string | null;
@@ -119,6 +120,7 @@ describe("getDashboardData", () => {
       status: i === 0 ? "RUNNING" : "DONE",
       scanned: 20,
       withoutWebsite: 15,
+      linkOnly: 2,
       saved: 15,
       estimatedCost: 0.1,
       error: null,

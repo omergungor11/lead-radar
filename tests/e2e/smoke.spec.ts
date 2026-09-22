@@ -29,7 +29,7 @@ test("giriş → arama → tablo → detay → şablon → export", async ({ pag
   await page.getByRole("button", { name: "Tara" }).click();
   const results = page.getByRole("link", { name: "Sonuçları gör" });
   await expect(results).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText(/\d+ tarandı · \d+ sitesiz · \d+ kaydedildi/)).toBeVisible();
+  await expect(page.getByText(/\d+ tarandı · \d+ sitesiz (\(.+\) )?· \d+ kaydedildi/)).toBeVisible();
 
   // Tablo — şehir filtresi URL'de
   await results.click();
@@ -39,9 +39,9 @@ test("giriş → arama → tablo → detay → şablon → export", async ({ pag
   await expect(rows.first()).toBeVisible();
   expect(await rows.count()).toBeGreaterThanOrEqual(3);
 
-  // Tüm liste: mock seed 15 sitesiz işletme (arama yeni kayıt eklemez, upsert eder)
+  // Tüm liste: mock seed 17 lead (15 linksiz + 1 Instagram + 1 Booking; arama upsert eder)
   await page.goto("/businesses");
-  await expect(rows).toHaveCount(15);
+  await expect(rows).toHaveCount(17);
 
   // Detay sheet
   const firstRowText = await rows.first().innerText();

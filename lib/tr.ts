@@ -62,6 +62,8 @@ export const tr = {
       address: "Adres",
       phone: "Telefon",
       email: "E-posta",
+      websiteUri: "Mevcut link",
+      websiteKind: "Link türü",
       rating: "Puan",
       userRatingCount: "Yorum Sayısı",
       score: "Lead Skoru",
@@ -70,6 +72,13 @@ export const tr = {
       googleMapsUri: "Google Maps URL",
       photoUrl: "Fotoğraf 1 URL",
       notes: "Notlar",
+    },
+    /** "Link türü" sütunu; marka varsa "Sosyal medya (Instagram)" */
+    websiteKind: {
+      NONE: "Yok",
+      SOCIAL: "Sosyal medya",
+      PLATFORM: "Platform",
+      WEBSITE: "Web sitesi",
     },
   },
   status: {
@@ -180,6 +189,7 @@ export const tr = {
       formBodyLabel: "Mesaj metni",
       formBodyPlaceholder: "Mesaj metnini yazın…",
       placeholdersLabel: "Yer tutucular (tıklayınca imlece eklenir)",
+      placeholderPlatformHint: "Instagram, Booking.com vb.; link yoksa \"sosyal medya\"",
       optOutWarning:
         "Bu şablonda opt-out cümlesi görünmüyor (örn. \"istemiyorsanız bildirin\"). Yine de kaydedebilirsiniz.",
       createSuccess: "Şablon oluşturuldu",
@@ -231,6 +241,7 @@ export const tr = {
       saved: "kaydedildi",
       estimatedCost: "Tahmini maliyet",
       viewResults: "Sonuçları gör",
+      linkOnlySuffix: (linkOnly: number) => `(${linkOnly}'i yalnız sosyal medya / platform)`,
       summary: (scanned: number, withoutWebsite: number) =>
         `${scanned} tarandı, ${withoutWebsite} sitesiz`,
     },
@@ -252,6 +263,7 @@ export const tr = {
       statusRunning: "Sürüyor",
       statusDone: "Tamamlandı",
       statusFailed: "Başarısız",
+      linkOnlySuffix: (linkOnly: number) => `(${linkOnly} sosyal)`,
     },
   },
   dashboard: {
@@ -289,6 +301,12 @@ export const tr = {
       statusAll: "Tüm durumlar",
       bandLabel: "Skor bandı",
       bandAll: "Tüm bantlar",
+      webLabel: "Site durumu",
+      webAll: "Tümü",
+      webNone: "Link yok",
+      webSocial: "Sadece sosyal medya",
+      webPlatform: "Platform profili",
+      webWebsite: "Web sitesi var",
       searchPlaceholder: "İsim veya telefon ara…",
       sortLabel: "Sırala",
       sortScore: "Skora göre",
@@ -398,6 +416,14 @@ export const tr = {
       add: "Not ekle",
       empty: "Henüz not yok",
       addError: "Not eklenemedi",
+    },
+  },
+  website: {
+    kinds: {
+      NONE: "Link yok",
+      SOCIAL: "Sosyal medya",
+      PLATFORM: "Platform profili",
+      WEBSITE: "Web sitesi var",
     },
   },
   cityPicker: {

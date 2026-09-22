@@ -20,6 +20,7 @@ import { NotesPanel } from "@/components/businesses/notes-panel";
 import { TemplatePanel } from "@/components/businesses/template-panel";
 import { EditableEmailCell } from "@/components/businesses/editable-email-cell";
 import { StaleIndicator } from "@/components/businesses/stale-indicator";
+import { WebsiteBadge } from "@/components/website-badge";
 import { formatCityDistrict, formatRatingReviews } from "@/components/businesses/format";
 import { ApiRequestError, refreshBusiness } from "@/components/businesses/api";
 import { useBusinessDetailQuery } from "@/components/businesses/use-business-detail-query";
@@ -143,6 +144,10 @@ export function BusinessSheet({ id, open, onOpenChange }: BusinessSheetProps) {
                       {tr.detail.contact.maps}
                     </a>
                   </Button>
+                ) : null}
+                {/* Rozet kendisi profile giden link (yeni sekme) */}
+                {business.websiteUri ? (
+                  <WebsiteBadge websiteUri={business.websiteUri} websiteKind={business.websiteKind} />
                 ) : null}
               </div>
               <EditableEmailCell id={business.id} email={business.email} />

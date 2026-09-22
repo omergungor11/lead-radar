@@ -43,6 +43,7 @@
 - Mock modda Türkiye şehri aranırsa fixture filtre tutmaz → 20 kaydın hepsi gelir (anlamsız); Türkiye için gerçek anahtar
 - İlçe: `lib/districts.ts` üretilmiş veri (yeniden üretmek için turkey-neighbourhoods `getDistrictsByCityCode`). `isDistrictOf` yazıma duyarlı — client listedeki yazımı aynen yollar. Mock'ta ilçe adı KKTC şehriyle aynıysa (Aksaray/Güzelyurt) yanlış eşleşir — önemsiz
 - Arama kategori önerileri `lib/config.ts` `SEARCH_CATEGORY_GROUPS` / `SEARCH_QUICK_PICKS` (grup etiketleri `tr.searches.form.categoryGroups`). Bonus listesi DB'de — `DEFAULT_BONUS_CATEGORIES` değişirse mevcut DB'ye birleştir + rescore
+- Lead tanımı: `classifyWebsite(uri).kind !== "WEBSITE"` (D-008). Yeni platform/sosyal domain → `lib/website.ts` RULES + `tests/website.test.ts`. Mock seed 17 (Lefkoşa/Girne aramaları 7 tarandı / 4 sitesiz / 1 linkOnly / 4 kaydedildi)
 - Tarayıcı doğrulaması: `pnpm dev --port 3200` + Playwright script (şifre `.env`'den), sonra süreci kapat
 
 ## Working Credentials (Dev)

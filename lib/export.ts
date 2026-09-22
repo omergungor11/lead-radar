@@ -2,12 +2,19 @@
 // `fetchExportRows` filtre/ids ile DB'den satırları getirir. Sunucu tarafı.
 
 import ExcelJS from "exceljs";
-import { buildOrderBy, buildWhere, normalizeStatus, parsePhotos } from "@/lib/businesses";
+import {
+  buildOrderBy,
+  buildWhere,
+  normalizeStatus,
+  normalizeWebsiteKind,
+  parsePhotos,
+} from "@/lib/businesses";
 import { categoryLabel } from "@/lib/categories";
 import { db } from "@/lib/db";
 import type { Status } from "@/lib/status";
 import { tr } from "@/lib/tr";
 import type { BusinessFilters } from "@/lib/types";
+import { classifyWebsite, type WebsiteKind } from "@/lib/website";
 
 export const EXPORT_MAX_ROWS = 5000;
 export const EXPORT_MAX_IDS = EXPORT_MAX_ROWS;
@@ -28,6 +35,9 @@ export interface ExportRow {
   address: string | null;
   phone: string | null;
   email: string | null;
+  /** Google'daki link (sosyal medya / platform profili) */
+  websiteUri: string | null;
+  websiteKind: WebsiteKind;
   rating: number | null;
   userRatingCount: number | null;
   score: number;
@@ -51,6 +61,8 @@ const COLUMNS: readonly { key: ColumnKey; width: number }[] = [
   { key: "address", width: 40 },
   { key: "phone", width: 18 },
   { key: "email", width: 28 },
+  { key: "websiteUri", width: 40 },
+  { key: "websiteKind", width: 24 },
   { key: "rating", width: 8 },
   { key: "userRatingCount", width: 13 },
   { key: "score", width: 11 },
@@ -88,6 +100,14 @@ function clip(text: string): string {
   return text.length > CELL_TEXT_MAX ? text.slice(0, CELL_TEXT_MAX) : text;
 }
 
+/** "Yok" · "Web sitesi" · "Sosyal medya (Instagram)" · "Platform (Booking.com)" */
+export function websiteKindLabel(kind: WebsiteKind, uri: string | null): string {
+  const base = tr.export.websiteKind[kind];
+  if (kind !== "SOCIAL" && kind !== "PLATFORM") return base;
+  const brand = classifyWebsite(uri).label;
+  return brand ? `${base} (${brand})` : base;
+}
+
 function rowValues(row: ExportRow): Record<ColumnKey, string | number | null> {
   return {
     name: row.name,
@@ -97,6 +117,8 @@ function rowValues(row: ExportRow): Record<ColumnKey, string | number | null> {
     address: row.address,
     phone: row.phone,
     email: row.email,
+    websiteUri: row.websiteUri,
+    websiteKind: websiteKindLabel(row.websiteKind, row.websiteUri),
     rating: row.rating,
     userRatingCount: row.userRatingCount,
     score: row.score,
@@ -163,6 +185,8 @@ export async function fetchExportRows(
       address: true,
       phone: true,
       email: true,
+      websiteUri: true,
+      websiteKind: true,
       rating: true,
       userRatingCount: true,
       score: true,
@@ -185,6 +209,8 @@ export async function fetchExportRows(
       address: b.address,
       phone: b.phone,
       email: b.email,
+      websiteUri: b.websiteUri,
+      websiteKind: normalizeWebsiteKind(b.websiteKind),
       rating: b.rating,
       userRatingCount: b.userRatingCount,
       score: b.score,

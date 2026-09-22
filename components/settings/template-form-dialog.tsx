@@ -22,12 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiFetch } from "@/components/api-client";
 import { hasOptOut } from "@/lib/templates";
 import type { Template } from "./types";
 import { tr } from "@/lib/tr";
 
-const PLACEHOLDERS = ["{{isletme}}", "{{sehir}}", "{{puan}}", "{{yorumSayisi}}"] as const;
+const PLACEHOLDERS = ["{{isletme}}", "{{sehir}}", "{{puan}}", "{{yorumSayisi}}", "{{platform}}"] as const;
 const TEMPLATES_QUERY_KEY = ["templates"] as const;
 
 interface TemplateFormDialogProps {
@@ -149,16 +150,33 @@ export function TemplateFormDialog({ mode, template, trigger }: TemplateFormDial
               {tr.settings.templates.placeholdersLabel}
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {PLACEHOLDERS.map((placeholder) => (
-                <button
-                  key={placeholder}
-                  type="button"
-                  onClick={() => insertPlaceholder(placeholder)}
-                  className="rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs hover:bg-muted/70"
-                >
-                  {placeholder}
-                </button>
-              ))}
+              {PLACEHOLDERS.map((placeholder) =>
+                placeholder === "{{platform}}" ? (
+                  <TooltipProvider key={placeholder}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => insertPlaceholder(placeholder)}
+                          className="rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs hover:bg-muted/70"
+                        >
+                          {placeholder}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>{tr.settings.templates.placeholderPlatformHint}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <button
+                    key={placeholder}
+                    type="button"
+                    onClick={() => insertPlaceholder(placeholder)}
+                    className="rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs hover:bg-muted/70"
+                  >
+                    {placeholder}
+                  </button>
+                ),
+              )}
             </div>
           </div>
           {optOutMissing ? (

@@ -22,6 +22,7 @@ import {
   type ReviewDto,
   type StatusChangeDto,
 } from "@/lib/types";
+import { isWebsiteKind, WEBSITE_KINDS, type WebsiteKind } from "@/lib/website";
 
 const DAY_MS = 86_400_000;
 const SCORE_BANDS = ["HOT", "WARM", "COLD"] as const satisfies readonly ScoreBand[];
@@ -43,6 +44,7 @@ const optionalText = z.preprocess(blankToUndefined, z.string().trim().max(200).o
 export const businessFiltersSchema = z.object({
   city: optionalText,
   district: optionalText,
+  web: z.preprocess(blankToUndefined, z.enum(WEBSITE_KINDS).optional()),
   category: optionalText,
   status: z.preprocess(blankToUndefined, z.enum(STATUSES).optional()),
   band: z.preprocess(blankToUndefined, z.enum(SCORE_BANDS).optional()),
@@ -64,7 +66,7 @@ export type ParsedBusinessFilters = BusinessFilters & {
 
 export type ParseResult<T> = { success: true; data: T } | { success: false; error: z.ZodError };
 
-/** Query string → filtreler. Geçersiz status/band/sort/page → `success: false` (route 400 döner). */
+/** Query string → filtreler. Geçersiz status/band/web/sort/page → `success: false` (route 400 döner). */
 export function parseBusinessFilters(
   searchParams: URLSearchParams,
 ): ParseResult<ParsedBusinessFilters> {
@@ -81,6 +83,7 @@ export function buildWhere(filters: BusinessFilters): Prisma.BusinessWhereInput 
   const where: Prisma.BusinessWhereInput = {};
   if (filters.city) where.city = filters.city;
   if (filters.district) where.district = filters.district;
+  if (filters.web) where.websiteKind = filters.web;
   if (filters.category) where.primaryType = filters.category;
   if (filters.status) where.status = filters.status;
 
@@ -190,6 +193,8 @@ export const listSelect = {
   phone: true,
   phoneE164: true,
   email: true,
+  websiteUri: true,
+  websiteKind: true,
   rating: true,
   userRatingCount: true,
   score: true,
@@ -207,6 +212,11 @@ export const detailInclude = {
   notes: { orderBy: [{ createdAt: "desc" }, { id: "desc" }] },
   statusChanges: { orderBy: [{ createdAt: "desc" }, { id: "desc" }] },
 } as const satisfies Prisma.BusinessInclude;
+
+/** DB'de bilinmeyen link türü → NONE. */
+export function normalizeWebsiteKind(value: string): WebsiteKind {
+  return isWebsiteKind(value) ? value : "NONE";
+}
 
 /** DB'de bilinmeyen durum (elle düzenleme vb.) → NEW. */
 export function normalizeStatus(value: string): Status {
@@ -230,6 +240,8 @@ export function toBusinessListItem(row: BusinessListRow, now: Date = new Date())
     phone: row.phone,
     phoneE164: row.phoneE164,
     email: row.email,
+    websiteUri: row.websiteUri,
+    websiteKind: normalizeWebsiteKind(row.websiteKind),
     rating: row.rating,
     userRatingCount: row.userRatingCount,
     score: row.score,

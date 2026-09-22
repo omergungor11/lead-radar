@@ -93,7 +93,14 @@ export function SearchJobsTable({ jobs, isLoading, emptyLabel }: SearchJobsTable
             <TableCell>{formatCityDistrict(job.city, job.district)}</TableCell>
             <TableCell>{statusBadge(job.status)}</TableCell>
             <TableCell className="text-right">{job.scanned}</TableCell>
-            <TableCell className="text-right">{job.withoutWebsite}</TableCell>
+            <TableCell className="text-right">
+              {job.withoutWebsite}
+              {job.linkOnly > 0 ? (
+                <span className="ml-1 text-xs text-muted-foreground">
+                  {tr.searches.table.linkOnlySuffix(job.linkOnly)}
+                </span>
+              ) : null}
+            </TableCell>
             <TableCell className="text-right">{job.saved}</TableCell>
             <TableCell className="text-right">{formatCost(job.estimatedCost)}</TableCell>
             <TableCell>{formatDateTime(job.startedAt)}</TableCell>

@@ -23,6 +23,7 @@ import { BusinessAvatar } from "@/components/businesses/business-avatar";
 import { PhoneCell } from "@/components/businesses/phone-cell";
 import { EditableEmailCell } from "@/components/businesses/editable-email-cell";
 import { StaleIndicator } from "@/components/businesses/stale-indicator";
+import { WebsiteBadge } from "@/components/website-badge";
 import { formatDate, formatRatingReviews } from "@/components/businesses/format";
 import { exportUrl } from "@/components/businesses/api";
 import { useBusinessFilters } from "@/components/businesses/use-business-filters";
@@ -48,6 +49,7 @@ export function BusinessTable() {
     filters.category,
     filters.status,
     filters.band,
+    filters.web,
     filters.q,
     filters.sort,
     filters.page,
@@ -158,14 +160,17 @@ export function BusinessTable() {
                     <BusinessAvatar name={item.name} thumbnailUrl={item.thumbnailUrl} />
                   </TableCell>
                   <TableCell className="max-w-48">
-                    <button
-                      type="button"
-                      onClick={() => openDetail(item.id)}
-                      className="flex items-center gap-1.5 text-left text-sm font-medium hover:underline"
-                    >
-                      <span className="truncate">{item.name}</span>
-                      {item.isStale ? <StaleIndicator /> : null}
-                    </button>
+                    <div className="flex flex-col gap-1">
+                      <button
+                        type="button"
+                        onClick={() => openDetail(item.id)}
+                        className="flex items-center gap-1.5 text-left text-sm font-medium hover:underline"
+                      >
+                        <span className="truncate">{item.name}</span>
+                        {item.isStale ? <StaleIndicator /> : null}
+                      </button>
+                      <WebsiteBadge websiteUri={item.websiteUri} websiteKind={item.websiteKind} />
+                    </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {categoryLabel(item.primaryType)}

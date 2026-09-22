@@ -1,5 +1,6 @@
 // PLACES_MOCK=1 için sahte Places istemcisi — ağ yok, deterministik. Seed ve Playwright bununla çalışır.
-// 15 KKTC işletmesi (OPERATIONAL + sitesiz) + sayaç testleri için 4 siteli + 1 kapalı kayıt.
+// 17 KKTC işletmesi (OPERATIONAL + kendi sitesi yok; 16 Booking.com, 17 Instagram linkli) + sayaç testleri
+// için 2 siteli + 1 kapalı kayıt.
 // Yorum tarihleri `now`'a göre göreli üretilir (recency sinyali zamanla bozulmasın).
 
 import type {
@@ -69,8 +70,8 @@ const REVIEW_TEXTS = [
 ];
 
 // Skor bantları (varsayılan bonus kategorilerle, yaklaşık):
-// HOT: 1, 2, 4, 7 · WARM: 5, 6, 8, 10, 12, 13 · COLD: 3, 9, 11, 14, 15
-// Son 30 günde yorumu olanlar: 1, 4, 7.
+// HOT: 1, 2, 4, 7, 16, 17 · WARM: 5, 6, 8, 10, 12, 13 · COLD: 3, 9, 11, 14, 15
+// Son 30 günde yorumu olanlar: 1, 4, 7, 16, 17.
 const SAVED_SEEDS: FixtureSeed[] = [
   // Lefkoşa
   {
@@ -302,12 +303,9 @@ const SAVED_SEEDS: FixtureSeed[] = [
     lat: 35.2766,
     lng: 33.9054,
   },
-];
-
-// Kaydedilmeyecekler: 4 siteli + 1 kapalı (sitesiz ama OPERATIONAL değil). Her aramada döner.
-const EXCLUDED_SEEDS: FixtureSeed[] = [
+  // Kendi sitesi yok, Google'da yalnız sosyal medya / platform linki var → lead (D-008)
   {
-    id: "mock-place-web-1",
+    id: "mock-place-16",
     name: "Lefkoşa Merkez Otel",
     city: "Lefkoşa",
     address: "Osman Paşa Cad. No:1, Lefkoşa",
@@ -320,10 +318,10 @@ const EXCLUDED_SEEDS: FixtureSeed[] = [
     reviewDaysAgo: [2],
     lat: 35.1833,
     lng: 33.3667,
-    websiteUri: "https://merkezotel.example.com/",
+    websiteUri: "https://www.booking.com/hotel/cy/lefkosa-merkez-otel.html",
   },
   {
-    id: "mock-place-web-2",
+    id: "mock-place-17",
     name: "Girne Marina Cafe & Bistro",
     city: "Girne",
     address: "Marina No:4, Girne",
@@ -336,8 +334,12 @@ const EXCLUDED_SEEDS: FixtureSeed[] = [
     reviewDaysAgo: [4],
     lat: 35.3421,
     lng: 33.3301,
-    websiteUri: "https://marinabistro.example.com/",
+    websiteUri: "https://www.instagram.com/girnemarinabistro/",
   },
+];
+
+// Kaydedilmeyecekler: 2 siteli + 1 kapalı (sitesiz ama OPERATIONAL değil). Her aramada döner.
+const EXCLUDED_SEEDS: FixtureSeed[] = [
   {
     id: "mock-place-web-3",
     name: "Mağusa Hukuk Bürosu",
@@ -444,12 +446,12 @@ function buildAll(now: Date): BuiltFixtures {
   return { saved: SAVED_SEEDS.map(build), excluded: EXCLUDED_SEEDS.map(build) };
 }
 
-/** Kaydedilmesi gereken 15 işletme (OPERATIONAL + sitesiz) — seed bunu kullanır. */
+/** Kaydedilmesi gereken 17 işletme (OPERATIONAL + kendi sitesi yok; 2'si yalnız sosyal/platform linkli) — seed bunu kullanır. */
 export function getMockSavedFixtures(now: Date = new Date()): MockFixture[] {
   return buildAll(now).saved;
 }
 
-/** Tüm 20 kayıt (15 kaydedilecek + 4 siteli + 1 kapalı). */
+/** Tüm 20 kayıt (17 kaydedilecek + 2 siteli + 1 kapalı). */
 export function getMockAllFixtures(now: Date = new Date()): MockFixture[] {
   const { saved, excluded } = buildAll(now);
   return [...saved, ...excluded];
@@ -469,8 +471,8 @@ function toTextSearchPlace(d: PlaceDetails): TextSearchPlace {
 }
 
 /**
- * Basit filtre: sorgu bir fixture şehrini içeriyorsa o şehrin 3 işletmesi, değilse 15'in tamamı.
- * Siteli 4 + kapalı 1 kayıt her zaman eklenir (sayaçlar için). Sayfa boyu 10 (sayfalama denensin).
+ * Basit filtre: sorgu bir fixture şehrini içeriyorsa o şehrin işletmeleri (Lefkoşa/Girne 4, diğerleri 3),
+ * değilse 17'nin tamamı. Siteli 2 + kapalı 1 kayıt her zaman eklenir (sayaçlar için). Sayfa boyu 10 (sayfalama denensin).
  */
 export interface MockClientOptions {
   now?: () => Date;

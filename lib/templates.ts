@@ -18,9 +18,12 @@ export interface TemplateVars {
   sehir: string;
   puan?: number | null;
   yorumSayisi?: number | null;
+  /** Sosyal medya / platform markası ("Instagram"); yoksa "sosyal medya" */
+  platform?: string | null;
 }
 
 const EMPTY = "—";
+const DEFAULT_PLATFORM = "sosyal medya";
 const PLACEHOLDER = /\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g;
 
 const ratingFormat = new Intl.NumberFormat("tr-TR", {
@@ -30,7 +33,7 @@ const ratingFormat = new Intl.NumberFormat("tr-TR", {
 const countFormat = new Intl.NumberFormat("tr-TR");
 
 /**
- * `{{isletme}}`, `{{sehir}}`, `{{puan}}` (4,6), `{{yorumSayisi}}` doldurur. Tek geçişte
+ * `{{isletme}}`, `{{sehir}}`, `{{puan}}` (4,6), `{{yorumSayisi}}`, `{{platform}}` (yoksa "sosyal medya") doldurur. Tek geçişte
  * çalışır: değer içindeki `{{…}}` yeniden işlenmez; bilinmeyen yer tutucu olduğu gibi kalır.
  */
 export function renderTemplate(body: string, vars: TemplateVars): string {
@@ -39,6 +42,7 @@ export function renderTemplate(body: string, vars: TemplateVars): string {
     sehir: vars.sehir,
     puan: vars.puan == null ? EMPTY : ratingFormat.format(vars.puan),
     yorumSayisi: vars.yorumSayisi == null ? EMPTY : countFormat.format(vars.yorumSayisi),
+    platform: vars.platform?.trim() || DEFAULT_PLATFORM,
   };
   return body.replace(PLACEHOLDER, (match, key: string) =>
     Object.hasOwn(values, key) ? (values[key] ?? match) : match,

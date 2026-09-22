@@ -27,6 +27,7 @@ type JobRow = Pick<
   | "status"
   | "scanned"
   | "withoutWebsite"
+  | "linkOnly"
   | "saved"
   | "estimatedCost"
   | "error"
@@ -43,6 +44,7 @@ export function toSearchJobDto(job: JobRow): SearchJobDto {
     status: isSearchJobStatus(job.status) ? job.status : "FAILED",
     scanned: job.scanned,
     withoutWebsite: job.withoutWebsite,
+    linkOnly: job.linkOnly,
     saved: job.saved,
     estimatedCost: job.estimatedCost,
     error: job.error,
@@ -58,6 +60,7 @@ export function toSearchProgress(job: JobRow): SearchProgress {
     status,
     scanned: job.scanned,
     withoutWebsite: job.withoutWebsite,
+    linkOnly: job.linkOnly,
     saved: job.saved,
     estimatedCost: job.estimatedCost,
     done: status !== "RUNNING",

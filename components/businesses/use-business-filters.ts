@@ -6,6 +6,7 @@ import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BUSINESS_SORTS, type BusinessFilters, type BusinessSort } from "@/lib/types";
 import { isStatus } from "@/lib/status";
+import { isWebsiteKind } from "@/lib/website";
 
 export const PAGE_SIZE = 20;
 
@@ -30,6 +31,7 @@ export function useBusinessFilters() {
   const filters = useMemo<BusinessFiltersState>(() => {
     const statusParam = searchParams.get("status");
     const bandParam = searchParams.get("band");
+    const webParam = searchParams.get("web");
     const sortParam = searchParams.get("sort");
     const pageParam = Number(searchParams.get("page"));
 
@@ -39,6 +41,7 @@ export function useBusinessFilters() {
       category: searchParams.get("category") ?? undefined,
       status: isStatus(statusParam) ? statusParam : undefined,
       band: isBand(bandParam) ? bandParam : undefined,
+      web: isWebsiteKind(webParam) ? webParam : undefined,
       q: searchParams.get("q") ?? undefined,
       sort: isSort(sortParam) ? sortParam : "score",
       page: Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1,
@@ -49,7 +52,10 @@ export function useBusinessFilters() {
   const setFilter = useCallback(
     (
       patch: Partial<
-        Record<"city" | "district" | "category" | "status" | "band" | "q" | "sort", string | undefined>
+        Record<
+          "city" | "district" | "category" | "status" | "band" | "web" | "q" | "sort",
+          string | undefined
+        >
       >,
     ) => {
       const params = new URLSearchParams(searchParams.toString());

@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 
 const WHATSAPP_TEMPLATE_ID = "tpl-whatsapp-ilk-temas";
 const EMAIL_TEMPLATE_ID = "tpl-email-ilk-temas";
+const WHATSAPP_SOCIAL_TEMPLATE_ID = "tpl-whatsapp-sosyal";
 
 // Paragraf içinde satır kırma yok — WhatsApp metni olduğu gibi gösterir.
 // Şehir eki kullanma ("{{sehir}}'de" → "Lefkoşa'de" ünlü uyumu bozulur); "bölgesinde" nötr.
@@ -21,6 +22,15 @@ const EMAIL_BODY = [
   "Piton Studios'tan yazıyorum. {{isletme}} işletmenizi Google Haritalar üzerinde inceledim — {{sehir}} bölgesinde {{puan}} puan ve {{yorumSayisi}} yorumla dikkat çekici bir müşteri memnuniyetiniz var. Ancak bir web siteniz bulunmuyor; bu da potansiyel müşterilerin sizi internette bulmasını zorlaştırıyor.",
   "Size özel, mobil uyumlu ve hızlı yüklenen bir web sitesi hazırlayabiliriz. Uygun olduğunuzda kısa bir görüşme ayarlayabilir miyiz?",
   "Bu tür e-postalar almak istemiyorsanız bu mesaja \"istemiyorum\" yazarak yanıt vermeniz yeterli, bir daha rahatsız etmeyeceğim.",
+].join("\n\n");
+
+// Sitesi yerine yalnız sosyal medya / platform profili olan işletmeler için ({{platform}} → "Instagram";
+// panel markayı bilmiyorsa "sosyal medya").
+const WHATSAPP_SOCIAL_BODY = [
+  "Merhaba, ben Piton Studios'tan yazıyorum.",
+  "{{isletme}} işletmenizin {{platform}} hesabını gördüm — {{sehir}} bölgesinde {{puan}} puan ve {{yorumSayisi}} yorumla gerçekten güçlü bir izleniminiz var. Ama müşterileriniz sizi Google'da aradığında karşılarına çıkacak kendi web siteniz yok.",
+  "Sosyal medyanızı bırakmanıza gerek yok; onu tamamlayan, hızlı ve mobil uyumlu bir web sitesi hazırlamak isteriz. Kısa bir görüşmeyle ihtiyacınızı konuşabilir miyiz?",
+  "Bu tür mesajlar almak istemiyorsanız \"istemiyorum\" yazmanız yeterli, bir daha rahatsız etmeyeceğim.",
 ].join("\n\n");
 
 async function main(): Promise<void> {
@@ -62,7 +72,19 @@ async function main(): Promise<void> {
     },
   });
 
-  // TASK-105: PLACES_MOCK=1 → mock fixture'daki 15 işletme (OPERATIONAL + sitesiz) upsert edilir.
+  await prisma.messageTemplate.upsert({
+    where: { id: WHATSAPP_SOCIAL_TEMPLATE_ID },
+    update: {}, // kullanıcı Ayarlar'dan düzenlemiş olabilir — ezme
+    create: {
+      id: WHATSAPP_SOCIAL_TEMPLATE_ID,
+      name: "İlk temas — Sosyal medyası olan (WhatsApp)",
+      channel: "WHATSAPP",
+      body: WHATSAPP_SOCIAL_BODY,
+    },
+  });
+
+  // TASK-105: PLACES_MOCK=1 → mock fixture'daki 17 işletme (OPERATIONAL + kendi sitesi yok; 2'si yalnız
+  // sosyal medya / platform linkli) upsert edilir.
   // placeId ile upsert → idempotent; kullanıcının durum/e-posta/notları korunur.
   if (process.env.PLACES_MOCK === "1") {
     const { getMockSavedFixtures } = await import("../lib/places.mock");

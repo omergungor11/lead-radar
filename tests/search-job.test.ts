@@ -36,14 +36,22 @@ describe("runSearchJob (mock istemci)", () => {
     const result = await runSearchJob({ jobId: "job-1", query: "berber", city: "Lefkoşa" }, client);
 
     expect(searchSpy).toHaveBeenCalledWith("berber Lefkoşa", undefined);
-    expect(result).toMatchObject({ status: "DONE", done: true, scanned: 8, withoutWebsite: 3, saved: 3 });
-    expect(detailsSpy).toHaveBeenCalledTimes(3);
+    // Lefkoşa: 3 sitesiz + 1 Booking.com linkli otel; 2 siteli + 1 kapalı elenir
+    expect(result).toMatchObject({
+      status: "DONE",
+      done: true,
+      scanned: 7,
+      withoutWebsite: 4,
+      linkOnly: 1,
+      saved: 4,
+    });
+    expect(detailsSpy).toHaveBeenCalledTimes(4);
     const detailIds = detailsSpy.mock.calls.map((c) => c[0]);
     expect(detailIds.every((id) => !id.includes("web") && !id.includes("closed"))).toBe(true);
-    expect(result.estimatedCost).toBe(estimateCost(1, 3));
-    expect(result.estimatedCost).toBeCloseTo(0.032 + 3 * 0.017, 6);
+    expect(result.estimatedCost).toBe(estimateCost(1, 4));
+    expect(result.estimatedCost).toBeCloseTo(0.032 + 4 * 0.017, 6);
 
-    expect(mocks.upsertBusiness).toHaveBeenCalledTimes(3);
+    expect(mocks.upsertBusiness).toHaveBeenCalledTimes(4);
     for (const call of mocks.upsertBusiness.mock.calls) {
       expect(call[1]).toBe("Lefkoşa");
       expect(call[2]).toBe("job-1");
@@ -62,7 +70,7 @@ describe("runSearchJob (mock istemci)", () => {
     }
   });
 
-  it("sayfalama + tüm liste: 20 tarandı, 15 sitesiz, 15 kaydedildi; siteli/kapalı kaydedilmez", async () => {
+  it("sayfalama + tüm liste: 20 tarandı, 17 sitesiz (2 linkli), 17 kaydedildi; siteli/kapalı kaydedilmez", async () => {
     const client = createMockPlacesClient();
     const searchSpy = vi.spyOn(client, "searchText");
     const detailsSpy = vi.spyOn(client, "getDetails");
@@ -70,11 +78,11 @@ describe("runSearchJob (mock istemci)", () => {
     const result = await runSearchJob({ jobId: "job-2", query: "işletme", city: "Lapta" }, client);
 
     expect(searchSpy).toHaveBeenCalledTimes(2);
-    expect(result).toMatchObject({ status: "DONE", scanned: 20, withoutWebsite: 15, saved: 15 });
-    expect(detailsSpy).toHaveBeenCalledTimes(15);
+    expect(result).toMatchObject({ status: "DONE", scanned: 20, withoutWebsite: 17, linkOnly: 2, saved: 17 });
+    expect(detailsSpy).toHaveBeenCalledTimes(17);
     const savedIds = mocks.upsertBusiness.mock.calls.map((c) => c[0].id);
     expect(savedIds.some((id) => id.includes("web") || id.includes("closed"))).toBe(false);
-    expect(result.estimatedCost).toBe(estimateCost(2, 15));
+    expect(result.estimatedCost).toBe(estimateCost(2, 17));
 
     // DB: her 5 taramada bir (5,10,15,20) + son (DONE, finishedAt)
     const statuses = mocks.jobUpdate.mock.calls.map((c) => c[0].data.status);
@@ -82,6 +90,7 @@ describe("runSearchJob (mock istemci)", () => {
     const last = mocks.jobUpdate.mock.calls.at(-1)?.[0].data;
     expect(last?.finishedAt).toBeInstanceOf(Date);
     expect(last?.error).toBeNull();
+    expect(last).toMatchObject({ withoutWebsite: 17, linkOnly: 2, saved: 17 });
   });
 
   it("ilerleme abonelere her 5'te bir ve sonda yayınlanır", async () => {
@@ -103,8 +112,34 @@ describe("runSearchJob (mock istemci)", () => {
       websiteUri: "https://yeni-site.example.com",
     }));
     const result = await runSearchJob({ jobId: "job-4", query: "x", city: "Girne" }, client);
-    expect(result).toMatchObject({ withoutWebsite: 3, saved: 0 });
+    expect(result).toMatchObject({ withoutWebsite: 4, linkOnly: 1, saved: 0 });
     expect(mocks.upsertBusiness).not.toHaveBeenCalled();
+  });
+
+  it("sosyal / platform linkli sonuç kaydedilir ve linkOnly artar; gerçek siteli elenir", async () => {
+    const client = createMockPlacesClient();
+    vi.spyOn(client, "searchText").mockResolvedValue({
+      places: [
+        { id: "p-insta", websiteUri: "https://www.instagram.com/ornek/", businessStatus: "OPERATIONAL" },
+        { id: "p-booking", websiteUri: "https://www.booking.com/hotel/cy/ornek.html", businessStatus: "OPERATIONAL" },
+        { id: "p-none", businessStatus: "OPERATIONAL" },
+        { id: "p-site", websiteUri: "https://ornek.com.tr/", businessStatus: "OPERATIONAL" },
+        { id: "p-closed", websiteUri: "https://www.instagram.com/kapali/", businessStatus: "CLOSED_PERMANENTLY" },
+      ],
+    });
+    const detailsSpy = vi.spyOn(client, "getDetails").mockImplementation(async (id) => ({
+      id,
+      businessStatus: "OPERATIONAL",
+      ...(id === "p-insta" ? { websiteUri: "https://www.instagram.com/ornek/" } : {}),
+      ...(id === "p-booking" ? { websiteUri: "https://www.booking.com/hotel/cy/ornek.html" } : {}),
+    }));
+
+    const result = await runSearchJob({ jobId: "job-s", query: "otel", city: "Girne" }, client);
+
+    expect(result).toMatchObject({ status: "DONE", scanned: 5, withoutWebsite: 3, linkOnly: 2, saved: 3 });
+    expect(detailsSpy.mock.calls.map((c) => c[0])).toEqual(["p-insta", "p-booking", "p-none"]);
+    expect(mocks.upsertBusiness.mock.calls.map((c) => c[0].id)).toEqual(["p-insta", "p-booking", "p-none"]);
+    expect(mocks.jobUpdate.mock.calls.at(-1)?.[0].data).toMatchObject({ linkOnly: 2, withoutWebsite: 3 });
   });
 
   it("hata → FAILED + mesaj + finishedAt", async () => {
@@ -127,8 +162,8 @@ describe("runSearchJob (mock istemci)", () => {
       return original(id);
     });
     const result = await runSearchJob({ jobId: "job-6", query: "x", city: "Girne" }, client);
-    expect(result).toMatchObject({ status: "DONE", withoutWebsite: 3, saved: 2 });
-    expect(result.estimatedCost).toBe(estimateCost(1, 3));
+    expect(result).toMatchObject({ status: "DONE", withoutWebsite: 4, saved: 3 });
+    expect(result.estimatedCost).toBe(estimateCost(1, 4));
   });
 });
 

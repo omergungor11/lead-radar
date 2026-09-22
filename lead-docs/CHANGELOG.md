@@ -3,6 +3,7 @@
 ## 2026-09-22
 
 ### Added
+- Sosyal medya / platform profili (Instagram, Facebook, linktr.ee, Booking, Yemeksepeti, Sahibinden…) veren işletmeler lead olarak kaydedilir; tabloda rozet, Site durumu filtresi, Excel'e Mevcut link / Link türü, arama kartında döküm, `{{platform}}` + sosyal medya şablonu
 - 86 arama kategorisi önerisi (10 sektör grubu, aranabilir liste + 10 hızlı çip); konaklama tipleri (lodging, motel, guest_house, bed_and_breakfast, hostel, resort_hotel) bonus kategorilere eklendi
 - İlçe bazlı arama: 81 ilin 973 ilçesi, aranabilir ilçe seçici, işletmeye ilçe kaydı, tablo/Excel ilçe filtresi ve İlçe sütunu
 - Türkiye'nin 81 ili şehir listesinde; aranabilir, gruplu şehir seçici (Türkçe karakter duyarsız arama); arama formunda ilçe ipucu

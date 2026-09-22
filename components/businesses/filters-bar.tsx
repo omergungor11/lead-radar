@@ -17,11 +17,18 @@ import { DistrictCombobox } from "@/components/district-combobox";
 import type { SettingsData } from "@/components/settings/types";
 import { districtsOf } from "@/lib/districts";
 import { STATUSES } from "@/lib/status";
+import { WEBSITE_KINDS } from "@/lib/website";
 import { tr } from "@/lib/tr";
 import type { BusinessFiltersState } from "./use-business-filters";
 
 const ALL = "__all__";
 const BANDS = ["HOT", "WARM", "COLD"] as const;
+const WEB_LABELS: Record<(typeof WEBSITE_KINDS)[number], string> = {
+  NONE: tr.businesses.filters.webNone,
+  SOCIAL: tr.businesses.filters.webSocial,
+  PLATFORM: tr.businesses.filters.webPlatform,
+  WEBSITE: tr.businesses.filters.webWebsite,
+};
 const SORTS = [
   { value: "score", label: tr.businesses.filters.sortScore },
   { value: "reviews", label: tr.businesses.filters.sortReviews },
@@ -32,7 +39,10 @@ interface FiltersBarProps {
   filters: BusinessFiltersState;
   onChange: (
     patch: Partial<
-      Record<"city" | "district" | "category" | "status" | "band" | "q" | "sort", string | undefined>
+      Record<
+        "city" | "district" | "category" | "status" | "band" | "web" | "q" | "sort",
+        string | undefined
+      >
     >,
   ) => void;
 }
@@ -133,6 +143,23 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
           {BANDS.map((band) => (
             <SelectItem key={band} value={band}>
               {tr.scoreBands[band]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={filters.web ?? ALL}
+        onValueChange={(v) => onChange({ web: v === ALL ? undefined : v })}
+      >
+        <SelectTrigger className="w-full sm:w-40" aria-label={tr.businesses.filters.webLabel}>
+          <SelectValue placeholder={tr.businesses.filters.webLabel} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>{tr.businesses.filters.webAll}</SelectItem>
+          {WEBSITE_KINDS.map((kind) => (
+            <SelectItem key={kind} value={kind}>
+              {WEB_LABELS[kind]}
             </SelectItem>
           ))}
         </SelectContent>

@@ -1,4 +1,5 @@
-// Arama işi yürütücüsü: Text Search sayfaları → sitesiz + OPERATIONAL olanlar için Details → upsert.
+// Arama işi yürütücüsü: Text Search sayfaları → kendi sitesi olmayan (link yok / yalnız sosyal medya /
+// platform profili — `lib/website.ts`) + OPERATIONAL olanlar için Details → upsert.
 // Route handler işi await etmeden başlatır (`startSearchJob`); istek bitse de süreç içinde sürer.
 // İlerleme her 5 taranan işletmede bir ve sonda hem DB'ye hem SSE abonelerine yazılır.
 
@@ -10,6 +11,7 @@ import { publishProgress } from "@/lib/search-jobs";
 import { getSetting } from "@/lib/settings";
 import { tr } from "@/lib/tr";
 import type { SearchProgress } from "@/lib/types";
+import { classifyWebsite } from "@/lib/website";
 
 export const PROGRESS_EVERY = 5;
 const MAX_PAGES = Math.ceil(PLACES_MAX_RESULTS / TEXT_SEARCH_PAGE_SIZE);
@@ -25,6 +27,7 @@ export interface SearchJobInput {
 interface Counters {
   scanned: number;
   withoutWebsite: number;
+  linkOnly: number;
   saved: number;
   textSearchCalls: number;
   detailsCalls: number;
@@ -61,6 +64,7 @@ function toProgress(jobId: string, c: Counters, status: SearchProgress["status"]
     status,
     scanned: c.scanned,
     withoutWebsite: c.withoutWebsite,
+    linkOnly: c.linkOnly,
     saved: c.saved,
     estimatedCost: estimateCost(c.textSearchCalls, c.detailsCalls),
     done: status !== "RUNNING",
@@ -82,6 +86,7 @@ async function persist(progress: SearchProgress): Promise<void> {
       status: progress.status,
       scanned: progress.scanned,
       withoutWebsite: progress.withoutWebsite,
+      linkOnly: progress.linkOnly,
       saved: progress.saved,
       estimatedCost: progress.estimatedCost,
       ...(progress.done ? { finishedAt: new Date(), error: progress.error ?? null } : {}),
@@ -95,7 +100,14 @@ async function persist(progress: SearchProgress): Promise<void> {
  */
 export async function runSearchJob(input: SearchJobInput, client: PlacesClient): Promise<SearchProgress> {
   const { jobId } = input;
-  const c: Counters = { scanned: 0, withoutWebsite: 0, saved: 0, textSearchCalls: 0, detailsCalls: 0 };
+  const c: Counters = {
+    scanned: 0,
+    withoutWebsite: 0,
+    linkOnly: 0,
+    saved: 0,
+    textSearchCalls: 0,
+    detailsCalls: 0,
+  };
 
   const report = async (): Promise<void> => {
     const progress = toProgress(jobId, c, "RUNNING");
@@ -116,9 +128,11 @@ export async function runSearchJob(input: SearchJobInput, client: PlacesClient):
         if (c.scanned >= PLACES_MAX_RESULTS) break;
         c.scanned += 1;
 
-        const hasWebsite = Boolean(place.websiteUri?.trim());
-        if (!hasWebsite && place.businessStatus === "OPERATIONAL") {
+        // Yalnız kendi web sitesi olanlar elenir; sosyal medya / platform profili lead sayılır.
+        const kind = classifyWebsite(place.websiteUri).kind;
+        if (kind !== "WEBSITE" && place.businessStatus === "OPERATIONAL") {
           c.withoutWebsite += 1;
+          if (kind !== "NONE") c.linkOnly += 1;
           let details;
           try {
             details = await client.getDetails(place.id);
@@ -129,7 +143,7 @@ export async function runSearchJob(input: SearchJobInput, client: PlacesClient):
           } finally {
             c.detailsCalls += 1;
           }
-          if (details && !details.websiteUri?.trim()) {
+          if (details && classifyWebsite(details.websiteUri).kind !== "WEBSITE") {
             await upsertBusiness(details, input.city, jobId, {
               bonusCategories,
               district: input.district ?? null,
@@ -168,6 +182,7 @@ export function startSearchJob(input: SearchJobInput, client: PlacesClient): voi
     status: "RUNNING",
     scanned: 0,
     withoutWebsite: 0,
+    linkOnly: 0,
     saved: 0,
     estimatedCost: 0,
     done: false,

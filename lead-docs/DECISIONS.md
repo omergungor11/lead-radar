@@ -2,6 +2,13 @@
 
 > Her mimari/teknolojik karar buraya. En yeni en üstte.
 
+## D-008: Sosyal medya / platform linki olanlar da lead — 2026-09-22
+
+**Karar**: Google `websiteUri` alanı `lib/website.ts#classifyWebsite` ile NONE / SOCIAL / PLATFORM / WEBSITE sınıflanır; yalnız WEBSITE elenir. Link `Business.websiteUri` + `websiteKind`'da saklanır, `SearchJob.linkOnly` sosyal/platform sayısını tutar.
+**Gerekçe**: Kullanıcı: küçük işletmelerin çoğu Google'a web sitesi olarak Instagram/Facebook, otel ve restoranlar Booking/Yemeksepeti sayfası koyuyor — kendi siteleri yok, en iyi adaylar arasında. D-002'deki "websiteUri boş olanlar" tanımı genişletildi.
+**Alternatifler**: Yalnız boş `websiteUri` (eski) — gerçek lead kaybı; linkin sayfasını çekip içerik analizi — scraping, kapsam dışı.
+**Etki**: Domain listesi `lib/website.ts` RULES'ta (alt alan adı eşleşir, sahte `instagram.com.x.tr` eşleşmez). Yeni şablon `tpl-whatsapp-sosyal` + `{{platform}}` yer tutucusu. Mock seed 15 → 17.
+
 ## D-007: Türkiye'nin 81 ili varsayılan şehir listesinde — 2026-09-22
 
 **Karar**: `DEFAULT_CITIES` = 6 KKTC şehri + 81 il (`lib/config.ts`: `KKTC_CITIES`, `TURKEY_PROVINCES`). Şehir seçici aranabilir ve KKTC / Türkiye / Diğer gruplu (`components/city-combobox.tsx`).

@@ -13,6 +13,7 @@ import {
   exportFileName,
   fetchExportRows,
   type ExportRow,
+  websiteKindLabel,
 } from "@/lib/export";
 import { tr } from "@/lib/tr";
 
@@ -24,6 +25,8 @@ const HEADERS = [
   "Adres",
   "Telefon",
   "E-posta",
+  "Mevcut link",
+  "Link türü",
   "Puan",
   "Yorum Sayısı",
   "Lead Skoru",
@@ -43,6 +46,8 @@ const FIXTURE: ExportRow[] = [
     address: "Dereboyu Cd. 12",
     phone: "+90 392 228 12 34",
     email: "ali@example.com",
+    websiteUri: "https://www.instagram.com/berberali/",
+    websiteKind: "SOCIAL",
     rating: 4.6,
     userRatingCount: 87,
     score: 85,
@@ -60,6 +65,8 @@ const FIXTURE: ExportRow[] = [
     address: null,
     phone: "05331234567",
     email: null,
+    websiteUri: null,
+    websiteKind: "NONE",
     rating: null,
     userRatingCount: null,
     score: 40,
@@ -77,6 +84,8 @@ const FIXTURE: ExportRow[] = [
     address: "Sahil yolu",
     phone: null,
     email: null,
+    websiteUri: "https://www.booking.com/hotel/cy/x.html",
+    websiteKind: "PLATFORM",
     rating: 3.9,
     userRatingCount: 4,
     score: 12,
@@ -125,6 +134,8 @@ describe("buildWorkbook", () => {
       "Dereboyu Cd. 12",
       "+90 392 228 12 34",
       "ali@example.com",
+      "https://www.instagram.com/berberali/",
+      "Sosyal medya (Instagram)",
       4.6,
       87,
       85,
@@ -143,6 +154,8 @@ describe("buildWorkbook", () => {
       "05331234567",
       null,
       null,
+      "Yok",
+      null,
       null,
       40,
       "Yeni",
@@ -153,12 +166,13 @@ describe("buildWorkbook", () => {
     ]);
     expect(rowValues(sheet, 4)[1]).toBeNull();
     expect(rowValues(sheet, 4).slice(2, 4)).toEqual(["İstanbul", "Kadıköy"]);
-    expect(rowValues(sheet, 4)[10]).toBe("Atlandı");
-    expect(rowValues(sheet, 4)[14]).toBe("Tek not");
+    expect(rowValues(sheet, 4).slice(7, 9)).toEqual(["https://www.booking.com/hotel/cy/x.html", "Platform (Booking.com)"]);
+    expect(rowValues(sheet, 4)[12]).toBe("Atlandı");
+    expect(rowValues(sheet, 4)[16]).toBe("Tek not");
   });
 
-  it("15 sütun; İlçe Şehir'den hemen sonra", () => {
-    expect(HEADERS).toHaveLength(15);
+  it("17 sütun; İlçe Şehir'den, link sütunları E-posta'dan hemen sonra", () => {
+    expect(HEADERS).toHaveLength(17);
     expect(Object.values(tr.export.columns)).toEqual(HEADERS);
   });
 
@@ -182,6 +196,17 @@ describe("buildWorkbook", () => {
   });
 });
 
+describe("websiteKindLabel", () => {
+  it("tr etiket; SOCIAL/PLATFORM'da marka parantez içinde", () => {
+    expect(websiteKindLabel("NONE", null)).toBe("Yok");
+    expect(websiteKindLabel("WEBSITE", "https://ornek.com")).toBe("Web sitesi");
+    expect(websiteKindLabel("SOCIAL", "https://fb.me/x")).toBe("Sosyal medya (Facebook)");
+    expect(websiteKindLabel("PLATFORM", "https://www.yemeksepeti.com/x")).toBe("Platform (Yemeksepeti)");
+    // Marka çözülemezse yalnız tür
+    expect(websiteKindLabel("SOCIAL", null)).toBe("Sosyal medya");
+  });
+});
+
 describe("exportFileName", () => {
   it("lead-radar-YYYY-MM-DD.xlsx (KKTC saati)", () => {
     expect(exportFileName(new Date("2026-09-22T10:00:00Z"))).toBe("lead-radar-2026-09-22.xlsx");
@@ -199,6 +224,8 @@ function dbRow(over: Record<string, unknown> = {}): Record<string, unknown> {
     address: null,
     phone: null,
     email: null,
+    websiteUri: null,
+    websiteKind: "NONE",
     rating: null,
     userRatingCount: null,
     score: 50,
@@ -249,6 +276,22 @@ describe("fetchExportRows", () => {
     );
   });
 
+  it("web filtresi where'e; link alanları satıra, bilinmeyen tür → NONE", async () => {
+    dbMock.business.findMany.mockResolvedValueOnce([
+      dbRow({ websiteUri: "https://www.instagram.com/a/", websiteKind: "SOCIAL" }),
+      dbRow({ websiteKind: "BOGUS" }),
+    ]);
+    const { rows } = await fetchExportRows({ filters: { web: "SOCIAL" } }, "http://localhost/");
+    expect(rows[0]).toMatchObject({ websiteUri: "https://www.instagram.com/a/", websiteKind: "SOCIAL" });
+    expect(rows[1]?.websiteKind).toBe("NONE");
+    expect(dbMock.business.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: { websiteKind: "SOCIAL" },
+        select: expect.objectContaining({ websiteUri: true, websiteKind: true }),
+      }),
+    );
+  });
+
   it("ids verilirse filtre yerine id listesi; üst sınır aşılırsa truncated", async () => {
     dbMock.business.findMany.mockResolvedValueOnce(Array.from({ length: EXPORT_MAX_ROWS + 1 }, () => dbRow()));
     const { rows, truncated } = await fetchExportRows({ ids: ["a", "b"] }, "http://localhost/");
@@ -271,11 +314,11 @@ describe("GET /api/export", () => {
       expect.objectContaining({ where: { id: { in: ["a", "b", "c"] } } }),
     );
     const sheet = await readBack(Buffer.from(await res.arrayBuffer()));
-    expect(sheet.getRow(2).getCell(14).value).toBe("http://localhost/api/photo?name=places%2Fp%2Fphotos%2F9");
+    expect(sheet.getRow(2).getCell(16).value).toBe("http://localhost/api/photo?name=places%2Fp%2Fphotos%2F9");
   });
 
-  it("geçersiz filtre → 400", async () => {
-    const res = await exportRoute(new Request("http://localhost/api/export?band=X"));
+  it.each(["band=X", "web=instagram"])("geçersiz filtre %s → 400", async (qs) => {
+    const res = await exportRoute(new Request(`http://localhost/api/export?${qs}`));
     expect(res.status).toBe(400);
   });
 });

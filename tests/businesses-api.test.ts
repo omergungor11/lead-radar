@@ -13,6 +13,8 @@ interface BusinessRow {
   phone: string | null;
   phoneE164: string | null;
   email: string | null;
+  websiteUri: string | null;
+  websiteKind: string;
   rating: number | null;
   userRatingCount: number | null;
   photos: string;
@@ -158,6 +160,8 @@ function business(id: string, over: Partial<BusinessRow> = {}): BusinessRow {
     phone: "0392 228 12 34",
     phoneE164: "+903922281234",
     email: null,
+    websiteUri: null,
+    websiteKind: "NONE",
     rating: 4.6,
     userRatingCount: 87,
     photos: JSON.stringify([{ name: "places/x/photos/1", url: "https://maps.googleapis.com/?key=AIzaSIZINTI" }]),
@@ -223,7 +227,7 @@ describe("parseBusinessFilters", () => {
   it("tüm alanlar; sayılar coerce", () => {
     const r = parseBusinessFilters(
       new URLSearchParams(
-        "city=Girne&district=%20Kad%C4%B1k%C3%B6y%20&category=cafe&status=CONTACTED&band=WARM&q=%20berber%20&sort=recent&page=3&pageSize=200",
+        "city=Girne&district=%20Kad%C4%B1k%C3%B6y%20&web=SOCIAL&category=cafe&status=CONTACTED&band=WARM&q=%20berber%20&sort=recent&page=3&pageSize=200",
       ),
     );
     expect(r).toEqual({
@@ -231,6 +235,7 @@ describe("parseBusinessFilters", () => {
       data: {
         city: "Girne",
         district: "Kadıköy",
+        web: "SOCIAL",
         category: "cafe",
         status: "CONTACTED",
         band: "WARM",
@@ -245,6 +250,8 @@ describe("parseBusinessFilters", () => {
   it.each([
     ["status=FOO"],
     ["band=hot"],
+    ["web=social"],
+    ["web=INSTAGRAM"],
     ["sort=name"],
     ["page=0"],
     ["page=abc"],
@@ -267,6 +274,7 @@ describe("buildWhere / buildOrderBy", () => {
       city: "İstanbul",
       district: "Kadıköy",
     });
+    expect(buildWhere({ web: "PLATFORM" })).toEqual({ websiteKind: "PLATFORM" });
     expect(buildWhere({ band: "WARM" })).toEqual({ score: { gte: 50, lt: 80 } });
     expect(buildWhere({ band: "COLD" })).toEqual({ score: { lt: 50 } });
     expect(buildWhere({})).toEqual({});
@@ -309,6 +317,15 @@ describe("toBusinessListItem / toBusinessDetail", () => {
 
     expect(item.district).toBeNull();
     expect(toBusinessListItem(business("b3", { district: "Kadıköy" }), now).district).toBe("Kadıköy");
+
+    expect(item).toMatchObject({ websiteUri: null, websiteKind: "NONE" });
+    const social = toBusinessListItem(
+      business("b4", { websiteUri: "https://www.instagram.com/x/", websiteKind: "SOCIAL" }),
+      now,
+    );
+    expect(social).toMatchObject({ websiteUri: "https://www.instagram.com/x/", websiteKind: "SOCIAL" });
+    // DB'de bilinmeyen tür → NONE
+    expect(toBusinessListItem(business("b5", { websiteKind: "OTHER" }), now).websiteKind).toBe("NONE");
 
     const fresh = toBusinessListItem(business("b2", { lastSyncedAt: new Date(now.getTime() - 29 * DAY) }), now);
     expect(fresh.isStale).toBe(false);
@@ -390,8 +407,25 @@ describe("GET /api/businesses", () => {
     );
   });
 
-  it("geçersiz filtre → 400 VALIDATION_ERROR", async () => {
-    const res = await listRoute(new Request("http://localhost/api/businesses?status=NOPE"));
+  it("web filtresi websiteKind'e iner; listSelect link alanlarını içerir", async () => {
+    business("b1", { websiteUri: "https://www.booking.com/hotel/cy/x.html", websiteKind: "PLATFORM" });
+    const res = await listRoute(new Request("http://localhost/api/businesses?web=PLATFORM"));
+    expect(res.status).toBe(200);
+    const body = await json<{ data: BusinessListItem[] }>(res);
+    expect(body.data[0]).toMatchObject({
+      websiteUri: "https://www.booking.com/hotel/cy/x.html",
+      websiteKind: "PLATFORM",
+    });
+    expect(dbMock.business.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { websiteKind: "PLATFORM" },
+        select: expect.objectContaining({ websiteUri: true, websiteKind: true }),
+      }),
+    );
+  });
+
+  it.each(["status=NOPE", "web=YOUTUBE"])("geçersiz filtre %s → 400 VALIDATION_ERROR", async (qs) => {
+    const res = await listRoute(new Request(`http://localhost/api/businesses?${qs}`));
     expect(res.status).toBe(400);
     expect((await json<ErrorBody>(res)).error.code).toBe("VALIDATION_ERROR");
   });

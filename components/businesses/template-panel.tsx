@@ -25,6 +25,7 @@ import {
 import { apiFetch } from "@/components/api-client";
 import { canTransition, requiresConfirmation } from "@/lib/status";
 import { renderTemplate, type Template } from "@/lib/templates";
+import { classifyWebsite } from "@/lib/website";
 import { waLink } from "@/lib/phone";
 import { tr } from "@/lib/tr";
 import type { BusinessDetail } from "@/lib/types";
@@ -61,7 +62,13 @@ export function TemplatePanel({ business }: TemplatePanelProps) {
 
   useEffect(() => {
     if (!templateId && templates && templates.length > 0) {
-      setTemplateId(templates[0]?.id ?? "");
+      const isSocialOrPlatform = business.websiteKind === "SOCIAL" || business.websiteKind === "PLATFORM";
+      const socialTemplate = isSocialOrPlatform
+        ? templates.find(
+            (t) => t.channel === "WHATSAPP" && t.name.toLocaleLowerCase("tr-TR").includes("sosyal"),
+          )
+        : undefined;
+      setTemplateId((socialTemplate ?? templates[0])?.id ?? "");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- yalnızca liste ilk geldiğinde varsayılan seç
   }, [templates]);
@@ -74,10 +81,18 @@ export function TemplatePanel({ business }: TemplatePanelProps) {
           sehir: business.city,
           puan: business.rating,
           yorumSayisi: business.userRatingCount,
+          platform: classifyWebsite(business.websiteUri).label,
         }),
       );
     }
-  }, [selected, business.name, business.city, business.rating, business.userRatingCount]);
+  }, [
+    selected,
+    business.name,
+    business.city,
+    business.rating,
+    business.userRatingCount,
+    business.websiteUri,
+  ]);
 
   const contactMutation = useMutation({
     mutationFn: (confirm?: boolean) =>

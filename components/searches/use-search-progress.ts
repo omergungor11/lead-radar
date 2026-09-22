@@ -17,6 +17,7 @@ function progressFromJob(job: SearchJobDto): SearchProgress {
     status: job.status,
     scanned: job.scanned,
     withoutWebsite: job.withoutWebsite,
+    linkOnly: job.linkOnly,
     saved: job.saved,
     estimatedCost: job.estimatedCost,
     done: job.status !== "RUNNING",

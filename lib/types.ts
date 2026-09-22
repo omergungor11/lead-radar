@@ -4,6 +4,7 @@
 
 import type { ScoreBand, ScoreBreakdownItem } from "@/lib/scoring";
 import type { Status } from "@/lib/status";
+import type { WebsiteKind } from "@/lib/website";
 
 // ─── İşletme ────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,10 @@ export interface BusinessListItem {
   phone: string | null;
   phoneE164: string | null;
   email: string | null;
+  /** Google'daki link — yalnız SOCIAL / PLATFORM (veya yenilemede site edinmişse WEBSITE) için dolu */
+  websiteUri: string | null;
+  /** NONE: link yok · SOCIAL: yalnız sosyal medya · PLATFORM: Booking/Yemeksepeti vb. profil · WEBSITE: sonradan site edinmiş */
+  websiteKind: WebsiteKind;
   rating: number | null;
   userRatingCount: number | null;
   score: number;
@@ -80,13 +85,14 @@ export type BusinessSort = (typeof BUSINESS_SORTS)[number];
 
 /**
  * `GET /api/businesses` ve `GET /api/export` aynı query parametrelerini alır:
- * `city, district (city ile birlikte anlamlı), category (primaryType), status, band (HOT|WARM|COLD), q (ad/telefon içerir),
+ * `city, district (city ile birlikte anlamlı), category (primaryType), status, web (NONE|SOCIAL|PLATFORM|WEBSITE), band (HOT|WARM|COLD), q (ad/telefon içerir),
  * sort (varsayılan score, hepsi azalan), page (1'den), pageSize (varsayılan 50, max 200)`.
  * Export ek olarak `ids=a,b,c` alır (verilirse filtre yerine yalnız bunlar).
  */
 export interface BusinessFilters {
   city?: string;
   district?: string;
+  web?: WebsiteKind;
   category?: string;
   status?: Status;
   band?: ScoreBand;
@@ -138,7 +144,10 @@ export interface SearchJobDto {
   district: string | null;
   status: SearchJobStatus;
   scanned: number;
+  /** Kendi sitesi olmayanlar (link yok + sosyal + platform) */
   withoutWebsite: number;
+  /** withoutWebsite içinden yalnız sosyal medya / platform linki olanlar */
+  linkOnly: number;
   saved: number;
   estimatedCost: number;
   error: string | null;
@@ -156,6 +165,7 @@ export interface SearchProgress {
   status: SearchJobStatus;
   scanned: number;
   withoutWebsite: number;
+  linkOnly: number;
   saved: number;
   estimatedCost: number;
   done: boolean;

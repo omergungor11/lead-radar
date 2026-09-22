@@ -55,8 +55,9 @@ export function SearchProgressCard({ progress, city, district }: SearchProgressC
       <CardContent className="flex flex-col gap-3">
         <p className="text-sm text-foreground">
           {progress.scanned} {tr.searches.progress.scanned} · {progress.withoutWebsite}{" "}
-          {tr.searches.progress.withoutWebsite} · {progress.saved}{" "}
-          {tr.searches.progress.saved}
+          {tr.searches.progress.withoutWebsite}
+          {progress.linkOnly > 0 ? ` ${tr.searches.progress.linkOnlySuffix(progress.linkOnly)}` : ""} ·{" "}
+          {progress.saved} {tr.searches.progress.saved}
         </p>
         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div

@@ -10,6 +10,7 @@ interface JobRow {
   status: string;
   scanned: number;
   withoutWebsite: number;
+  linkOnly: number;
   saved: number;
   estimatedCost: number;
   error: string | null;
@@ -31,6 +32,7 @@ vi.mock("@/lib/db", () => ({
           ...data,
           scanned: 0,
           withoutWebsite: 0,
+          linkOnly: 0,
           saved: 0,
           estimatedCost: 0,
           error: null,
@@ -99,6 +101,7 @@ function addJob(partial: Partial<JobRow> & { id: string }): JobRow {
     status: "RUNNING",
     scanned: 0,
     withoutWebsite: 0,
+    linkOnly: 0,
     saved: 0,
     estimatedCost: 0,
     error: null,
@@ -208,7 +211,7 @@ describe("GET /api/search/[jobId]/stream", () => {
   });
 
   it("bitmiş iş → tek mesaj ve kapanır; SSE header'ları", async () => {
-    addJob({ id: "done-1", status: "DONE", scanned: 20, withoutWebsite: 15, saved: 15, estimatedCost: 0.319 });
+    addJob({ id: "done-1", status: "DONE", scanned: 20, withoutWebsite: 17, linkOnly: 2, saved: 17, estimatedCost: 0.319 });
     const res = await stream("done-1");
     expect(res.headers.get("content-type")).toContain("text/event-stream");
     expect(res.headers.get("cache-control")).toBe("no-cache, no-transform");
@@ -219,8 +222,9 @@ describe("GET /api/search/[jobId]/stream", () => {
         jobId: "done-1",
         status: "DONE",
         scanned: 20,
-        withoutWebsite: 15,
-        saved: 15,
+        withoutWebsite: 17,
+        linkOnly: 2,
+        saved: 17,
         estimatedCost: 0.319,
         done: true,
       },
@@ -229,7 +233,7 @@ describe("GET /api/search/[jobId]/stream", () => {
 
   it("çalışan iş: mevcut durum hemen, sonra yayınlar, done'da kapanır", async () => {
     addJob({ id: "run-1" });
-    const base = { jobId: "run-1", withoutWebsite: 0, saved: 0, estimatedCost: 0 };
+    const base = { jobId: "run-1", withoutWebsite: 0, linkOnly: 0, saved: 0, estimatedCost: 0 };
     publishProgress({ ...base, status: "RUNNING", scanned: 5, done: false });
 
     const res = await stream("run-1");
@@ -259,6 +263,7 @@ describe("GET /api/search/[jobId]/stream", () => {
       status: "RUNNING",
       scanned: 0,
       withoutWebsite: 0,
+      linkOnly: 0,
       saved: 0,
       estimatedCost: 0,
       done: false,

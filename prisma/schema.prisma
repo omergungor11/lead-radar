@@ -18,6 +18,8 @@ model Business {
   district            String?  // arama ilçe bazlıysa (Türkiye); ilk bulunduğu ilçe
   phone               String?  // national format, görüntüleme için
   phoneE164           String?  // wa.me için
+  websiteUri          String?  // Google'daki link (yalnız sosyal medya / platform profili olabilir; gerçek siteler kaydedilmez)
+  websiteKind         String   @default("NONE") // lib/website.ts: NONE | SOCIAL | PLATFORM | WEBSITE (yenilemede site edinmişse)
   email               String?  // elle girilir
   rating              Float?
   userRatingCount     Int?
@@ -51,6 +53,7 @@ model SearchJob {
   status          String     @default("RUNNING") // RUNNING | DONE | FAILED
   scanned         Int        @default(0)
   withoutWebsite  Int        @default(0)
+  linkOnly        Int        @default(0) // withoutWebsite içinden yalnız sosyal medya / platform linki olanlar
   saved           Int        @default(0)
   estimatedCost   Float      @default(0)
   error           String?

@@ -11,6 +11,7 @@ import { toScoreInput } from "@/lib/rescore";
 import { computeScore } from "@/lib/scoring";
 import { getSetting } from "@/lib/settings";
 import type { PhotoRef, ReviewDto } from "@/lib/types";
+import { classifyWebsite, type WebsiteKind } from "@/lib/website";
 
 /** Google'dan gelen, her senkronda yenilenen alanlar. */
 export interface GoogleBusinessFields {
@@ -20,6 +21,10 @@ export interface GoogleBusinessFields {
   address: string | null;
   phone: string | null;
   phoneE164: string | null;
+  /** Google'daki link (sosyal medya / platform profili olabilir); yoksa null */
+  websiteUri: string | null;
+  /** `classifyWebsite(websiteUri).kind` — yenilemede site edinmişse WEBSITE olur, kayıt silinmez */
+  websiteKind: WebsiteKind;
   rating: number | null;
   userRatingCount: number | null;
   photos: string;
@@ -53,6 +58,7 @@ export function mapDetailsToFields(details: PlaceDetails): GoogleBusinessFields 
   }));
 
   const hours = details.regularOpeningHours?.weekdayDescriptions;
+  const websiteUri = details.websiteUri?.trim() || null;
 
   return {
     name: details.displayName?.text?.trim() || details.id,
@@ -61,6 +67,8 @@ export function mapDetailsToFields(details: PlaceDetails): GoogleBusinessFields 
     address: details.formattedAddress ?? null,
     phone,
     phoneE164,
+    websiteUri,
+    websiteKind: classifyWebsite(websiteUri).kind,
     rating: details.rating ?? null,
     userRatingCount: details.userRatingCount ?? null,
     photos: JSON.stringify(photos),

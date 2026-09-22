@@ -19,6 +19,7 @@ function toQueryString(filters: BusinessFilters & { ids?: string[] }): string {
   if (filters.category) params.set("category", filters.category);
   if (filters.status) params.set("status", filters.status);
   if (filters.band) params.set("band", filters.band);
+  if (filters.web) params.set("web", filters.web);
   if (filters.q) params.set("q", filters.q);
   if (filters.sort) params.set("sort", filters.sort);
   if (filters.page) params.set("page", String(filters.page));

@@ -7,6 +7,7 @@ import {
   TEXT_SEARCH_FIELD_MASK,
 } from "@/lib/places";
 import { createMockPlacesClient, getMockAllFixtures, getMockSavedFixtures } from "@/lib/places.mock";
+import { classifyWebsite, isLeadWebsite } from "@/lib/website";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -153,13 +154,19 @@ describe("getPlacesClient", () => {
 });
 
 describe("mock istemci", () => {
-  it("15 kaydedilecek + 4 siteli + 1 kapalı; fotoğraf adları mock/photo-n", () => {
+  it("17 kaydedilecek (2 sosyal/platform linkli) + 2 siteli + 1 kapalı; fotoğraf adları mock/photo-n", () => {
     const all = getMockAllFixtures();
     expect(all).toHaveLength(20);
     const saved = getMockSavedFixtures();
-    expect(saved).toHaveLength(15);
-    expect(saved.every((f) => !f.details.websiteUri && f.details.businessStatus === "OPERATIONAL")).toBe(true);
-    expect(all.filter((f) => f.details.websiteUri)).toHaveLength(4);
+    expect(saved).toHaveLength(17);
+    expect(
+      saved.every((f) => isLeadWebsite(f.details.websiteUri) && f.details.businessStatus === "OPERATIONAL"),
+    ).toBe(true);
+    expect(saved.map((f) => classifyWebsite(f.details.websiteUri).kind).filter((k) => k !== "NONE").sort()).toEqual([
+      "PLATFORM",
+      "SOCIAL",
+    ]);
+    expect(all.filter((f) => classifyWebsite(f.details.websiteUri).kind === "WEBSITE")).toHaveLength(2);
     expect(all.filter((f) => f.details.businessStatus !== "OPERATIONAL")).toHaveLength(1);
     const names = all.flatMap((f) => (f.details.photos ?? []).map((p) => p.name));
     expect(names.every((n) => /^mock\/photo-\d+$/.test(n))).toBe(true);
@@ -169,7 +176,7 @@ describe("mock istemci", () => {
     );
   });
 
-  it("şehirsiz sorgu 2 sayfada 20 sonuç; şehirli sorgu o şehrin 3'ü + 5 hariç kayıt", async () => {
+  it("şehirsiz sorgu 2 sayfada 20 sonuç; şehirli sorgu o şehrin işletmeleri + 3 hariç kayıt", async () => {
     const client = createMockPlacesClient();
     const p1 = await client.searchText("berber");
     expect(p1.places).toHaveLength(10);
@@ -179,17 +186,24 @@ describe("mock istemci", () => {
     expect(p2.nextPageToken).toBeUndefined();
 
     const girne = await client.searchText("kafe Girne");
-    expect(girne.places).toHaveLength(8);
+    expect(girne.places).toHaveLength(7); // 4 Girne + 2 siteli + 1 kapalı
+    const iskele = await client.searchText("kafe İskele");
+    expect(iskele.places).toHaveLength(6);
   });
 
-  it("son 30 günde yorumu olan 2–3 işletme var (göreli tarih)", () => {
+  it("son 30 günde yorumu olan 5 işletme var (göreli tarih)", () => {
     const now = new Date("2026-09-22T12:00:00Z");
     const recent = getMockSavedFixtures(now).filter((f) =>
       (f.details.reviews ?? []).some(
         (r) => r.publishTime && now.getTime() - new Date(r.publishTime).getTime() <= 30 * 86_400_000,
       ),
     );
-    expect(recent.length).toBeGreaterThanOrEqual(2);
-    expect(recent.length).toBeLessThanOrEqual(3);
+    expect(recent.map((f) => f.details.id).sort()).toEqual([
+      "mock-place-01",
+      "mock-place-04",
+      "mock-place-07",
+      "mock-place-16",
+      "mock-place-17",
+    ]);
   });
 });
