@@ -20,7 +20,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster />
+      {/* Radix modal (Sheet/Dialog) body'ye pointer-events:none verir → toast aksiyonları ("Geri al") tıklanabilir kalsın */}
+      <Toaster className="pointer-events-auto" />
     </QueryClientProvider>
   );
 }

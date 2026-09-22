@@ -62,7 +62,22 @@ async function main(): Promise<void> {
     },
   });
 
-  // TASK-105: PLACES_MOCK=1 iken lib/places.mock.ts fixture'ları buradan upsert edilecek
+  // TASK-105: PLACES_MOCK=1 → mock fixture'daki 15 işletme (OPERATIONAL + sitesiz) upsert edilir.
+  // placeId ile upsert → idempotent; kullanıcının durum/e-posta/notları korunur.
+  if (process.env.PLACES_MOCK === "1") {
+    const { getMockSavedFixtures } = await import("../lib/places.mock");
+    const { upsertBusiness } = await import("../lib/ingest");
+    const { db } = await import("../lib/db");
+    try {
+      const fixtures = getMockSavedFixtures();
+      for (const { city, details } of fixtures) {
+        await upsertBusiness(details, city, null);
+      }
+      console.log(`Mock işletmeler yazıldı: ${fixtures.length}`);
+    } finally {
+      await db.$disconnect();
+    }
+  }
 
   const [settingCount, templateCount, businessCount] = await Promise.all([
     prisma.setting.count(),

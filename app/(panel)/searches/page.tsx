@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
+import { SearchesView } from "@/components/searches/searches-view";
 import { tr } from "@/lib/tr";
 
 export const metadata: Metadata = {
@@ -9,10 +10,11 @@ export const metadata: Metadata = {
 export default function SearchesPage() {
   return (
     <div>
-      <PageHeader title={tr.panel.searches.title} />
-      <p className="text-sm text-muted-foreground">
-        {tr.panel.searches.placeholder}
-      </p>
+      <PageHeader
+        title={tr.searches.title}
+        description={tr.searches.description}
+      />
+      <SearchesView />
     </div>
   );
 }
