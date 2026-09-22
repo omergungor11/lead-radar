@@ -6,3 +6,82 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+model Business {
+  id                  String   @id @default(cuid())
+  placeId             String   @unique
+  name                String
+  primaryType         String?
+  types               String   // JSON string[]
+  address             String?
+  city                String
+  phone               String?  // national format, görüntüleme için
+  phoneE164           String?  // wa.me için
+  email               String?  // elle girilir
+  rating              Float?
+  userRatingCount     Int?
+  photos              String   // JSON: { name: string, url: string }[]
+  reviews             String   // JSON: { author, rating, text, publishTime }[]
+  openingHours        String?  // JSON string[] (weekdayDescriptions)
+  googleMapsUri       String?
+  lat                 Float?
+  lng                 Float?
+  score               Int      @default(0)
+  scoreBreakdown      String   // JSON: { signal: string, points: number }[]
+  status              String   @default("NEW")
+  lastContactedAt     DateTime?
+  firstSeenAt         DateTime @default(now())
+  lastSyncedAt        DateTime @default(now())
+  searchJobId         String?
+  searchJob           SearchJob?      @relation(fields: [searchJobId], references: [id])
+  notes               Note[]
+  statusChanges       StatusChange[]
+
+  @@index([city, status])
+  @@index([score])
+}
+
+model SearchJob {
+  id              String     @id @default(cuid())
+  query           String
+  city            String
+  status          String     @default("RUNNING") // RUNNING | DONE | FAILED
+  scanned         Int        @default(0)
+  withoutWebsite  Int        @default(0)
+  saved           Int        @default(0)
+  estimatedCost   Float      @default(0)
+  error           String?
+  startedAt       DateTime   @default(now())
+  finishedAt      DateTime?
+  businesses      Business[]
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  body        String
+  createdAt   DateTime @default(now())
+}
+
+model StatusChange {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  from        String
+  to          String
+  createdAt   DateTime @default(now())
+}
+
+model MessageTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  channel   String   // WHATSAPP | EMAIL
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String // JSON
+}
