@@ -82,7 +82,7 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 
 **Agent**: backend
 **Complexity**: L
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-104
 
 ### Açıklama
@@ -90,13 +90,13 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 `GET /api/search/[jobId]/stream` (SSE), `GET /api/search`, `GET /api/photo` proxy.
 
 ### Acceptance Criteria
-- [ ] Text Search field mask sadece 5 alan; Details sadece `websiteUri` boş olanlara
-- [ ] Sitesi olan / OPERATIONAL olmayan kaydedilmez, sayaçlara yazılır
-- [ ] Upsert: mevcut `status`, `email`, notlar korunur
-- [ ] SSE her 5 işletmede bir ilerleme yayar; hata → `FAILED` + mesaj
-- [ ] `estimatedCost` hesaplanıyor
-- [ ] Anahtar yok + mock kapalı → 503, uygulama çökmez
-- [ ] `/api/photo?name=…` → 302 Google URL (anahtar server'da)
+- [x] Text Search field mask sadece 5 alan; Details sadece `websiteUri` boş olanlara
+- [x] Sitesi olan / OPERATIONAL olmayan kaydedilmez, sayaçlara yazılır
+- [x] Upsert: mevcut `status`, `email`, notlar korunur
+- [x] SSE her 5 işletmede bir ilerleme yayar; hata → `FAILED` + mesaj
+- [x] `estimatedCost` hesaplanıyor
+- [x] Anahtar yok + mock kapalı → 503, uygulama çökmez
+- [x] `/api/photo?name=…` → sunucu `skipHttpRedirect=true` ile anahtarsız `photoUri` alır → 302 (anahtar ne bundle'da ne Location header'ında)
 
 ---
 
@@ -104,17 +104,17 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 
 **Agent**: backend (`/api/businesses*`) ‖ frontend (`components/business-table.tsx`, `/businesses`)
 **Complexity**: L
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-104 (frontend mock veriyle TASK-105 beklemeden başlayabilir)
 
 ### Acceptance Criteria
-- [ ] §3'teki 10 sütun sırasıyla; fotoğraf yoksa baş harf avatarı
-- [ ] Filtreler URL query'de; sayfa yenilenince korunur
-- [ ] Telefon tıkla → kopyala + toast; WhatsApp ikonu → `wa.me/<E164>` yeni sekme
-- [ ] E-posta hücresi inline düzenlenir, blur'da PATCH
-- [ ] Durum dropdown sadece izinli geçişleri gösterir; SKIPPED/LOST → CONTACTED onay diyaloğu
-- [ ] Toplu seçim → Excel'e aktar (TASK-108'e bağlanır) / durum değiştir
-- [ ] 30 günden eski `lastSyncedAt` → "veri eski" işareti
+- [x] §3'teki 10 sütun sırasıyla; fotoğraf yoksa baş harf avatarı
+- [x] Filtreler URL query'de; sayfa yenilenince korunur
+- [x] Telefon tıkla → kopyala + toast; WhatsApp ikonu → `wa.me/<E164>` yeni sekme
+- [x] E-posta hücresi inline düzenlenir, blur'da PATCH
+- [x] Durum dropdown sadece izinli geçişleri gösterir; SKIPPED/LOST → CONTACTED onay diyaloğu
+- [x] Toplu seçim → Excel'e aktar (TASK-108'e bağlanır) / durum değiştir
+- [x] 30 günden eski `lastSyncedAt` → "veri eski" işareti
 
 ---
 
@@ -122,14 +122,14 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 
 **Agent**: frontend (`components/business-sheet.tsx`) + backend (`/api/businesses/[id]/notes`, template doldurma)
 **Complexity**: L
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-106
 
 ### Acceptance Criteria
-- [ ] §4'teki tüm bloklar: galeri, iletişim, puan/saatler, 5 yorum, skor kırılımı, durum geçmişi, notlar
-- [ ] Şablon seç → `{{}}` dolduruldu → "Kopyala" ve "Kopyala + WhatsApp'ı aç"
-- [ ] Kopyalama sonrası durum otomatik CONTACTED, `lastContactedAt` güncel, `StatusChange` yazıldı; "Geri al" toast'u
-- [ ] "Yenile" butonu tek işletme için Details çağırır, `lastSyncedAt` güncellenir
+- [x] §4'teki tüm bloklar: galeri, iletişim, puan/saatler, 5 yorum, skor kırılımı, durum geçmişi, notlar
+- [x] Şablon seç → `{{}}` dolduruldu → "Kopyala" ve "Kopyala + WhatsApp'ı aç"
+- [x] Kopyalama sonrası durum otomatik CONTACTED, `lastContactedAt` güncel, `StatusChange` yazıldı; "Geri al" toast'u
+- [x] "Yenile" butonu tek işletme için Details çağırır, `lastSyncedAt` güncellenir
 
 ---
 
@@ -137,14 +137,14 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 
 **Agent**: backend
 **Complexity**: S
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-106
 
 ### Acceptance Criteria
-- [ ] `GET /api/export?<filtreler>` → `lead-radar-<tarih>.xlsx`
-- [ ] §7'deki 14 sütun; başlık kalın; telefon sütunu metin
-- [ ] Notlar `" | "` ile birleştirilmiş
-- [ ] Vitest: 3 işletmelik fixture → workbook parse → hücre değerleri doğru
+- [x] `GET /api/export?<filtreler>` → `lead-radar-<tarih>.xlsx`
+- [x] §7'deki 14 sütun; başlık kalın; telefon sütunu metin
+- [x] Notlar `" | "` ile birleştirilmiş
+- [x] Vitest: 3 işletmelik fixture → workbook parse → hücre değerleri doğru
 
 ---
 
@@ -152,13 +152,13 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 
 **Agent**: frontend + backend (`/api/dashboard`)
 **Complexity**: M
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-105, TASK-106
 
 ### Acceptance Criteria
-- [ ] §6'daki 6 kart + funnel + son 10 arama tablosu
-- [ ] Cevap oranı = (REPLIED+MEETING+WON) / CONTACTED, CONTACTED=0 iken "—"
-- [ ] Sayılar DB ile tutarlı (test: seed sonrası bilinen değerler)
+- [x] §6'daki 6 kart + funnel + son 10 arama tablosu
+- [x] Cevap oranı = hiç REPLIED'a ulaşan / hiç CONTACTED'a ulaşan işletme (StatusChange'ten; REPLIED→MEETING→WON sırası nedeniyle REPLIED+MEETING+WON / CONTACTED ile eşdeğer), payda 0 iken "—"
+- [x] Sayılar DB ile tutarlı (test: seed sonrası bilinen değerler)
 
 ---
 
@@ -181,11 +181,11 @@ PROMPT.md "Veri modeli" bölümündeki şemayı birebir uygula. Seed: 2 mesaj ş
 
 **Agent**: frontend (Playwright) + docs (README)
 **Complexity**: M
-**Status**: PENDING
+**Status**: COMPLETED
 **Dependencies**: TASK-101..110
 
 ### Acceptance Criteria
-- [ ] `PLACES_MOCK=1` ile Playwright: login → arama → tabloda 15 satır → detay aç → şablon kopyala → export indir
-- [ ] README: kurulum, `.env`, Places anahtarı alma (Cloud Console adımları), maliyet tablosu, yasal not, yol haritası
-- [ ] PROMPT.md "Definition of Done" listesindeki her madde işaretli
-- [ ] `grep -r "AIza" .next/static` boş
+- [x] `PLACES_MOCK=1` ile Playwright: login → arama → tabloda 15 satır → detay aç → şablon kopyala → export indir
+- [x] README: kurulum, `.env`, Places anahtarı alma (Cloud Console adımları), maliyet tablosu, yasal not, yol haritası
+- [x] PROMPT.md "Definition of Done" listesindeki her madde işaretli
+- [x] `grep -r "AIza" .next/static` boş

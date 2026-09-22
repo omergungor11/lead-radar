@@ -5,10 +5,10 @@
 | Phase | Name | Total | Done | In Progress | Review | Pending | Blocked |
 |-------|------|-------|------|-------------|--------|---------|---------|
 | 0 | Project Setup | 7 | 7 | 0 | 0 | 0 | 0 |
-| 1 | MVP — Panel + Places + Pipeline | 11 | 5 | 0 | 0 | 6 | 0 |
-| **Total** | | **18** | **12** | **0** | **0** | **6** | **0** |
+| 1 | MVP — Panel + Places + Pipeline | 11 | 11 | 0 | 0 | 0 | 0 |
+| **Total** | | **18** | **18** | **0** | **0** | **0** | **0** |
 
-**Progress**: 12/18 (67%)
+**Progress**: 18/18 (100%) — MVP tamam; gerçek Places anahtarıyla doğrulama kullanıcıda
 
 ---
 
@@ -38,13 +38,13 @@ Spesifikasyon: `lead-plans/PROMPT.md`. Detaylar: `lead-tasks/phases/phase-1.md`.
 | TASK-102 | Prisma şema + migrate + seed (şablonlar, şehirler, mock işletmeler) | database | M | COMPLETED | TASK-101 |
 | TASK-103 | Auth — login sayfası, middleware, httpOnly cookie | backend + frontend | S | COMPLETED | TASK-101 |
 | TASK-104 | `lib/scoring` + `lib/status` + `lib/phone` — test-first | backend | M | COMPLETED | TASK-102 |
-| TASK-105 | `lib/places` + mock + `/api/search` + SSE + SearchJob | backend | L | PENDING | TASK-104 |
-| TASK-106 | `/api/businesses*` + tablo ekranı (filtre, sıralama, inline e-posta/durum, toplu işlem) | backend + frontend | L | PENDING | TASK-104 |
-| TASK-107 | Detay sheet — galeri, yorumlar, skor kırılımı, notlar, şablon kopyala → WhatsApp | frontend + backend | L | PENDING | TASK-106 |
-| TASK-108 | Excel export (`/api/export`, exceljs) | backend | S | PENDING | TASK-106 |
-| TASK-109 | Dashboard — kartlar, funnel, son aramalar | frontend + backend | M | PENDING | TASK-105, TASK-106 |
+| TASK-105 | `lib/places` + mock + `/api/search` + SSE + SearchJob | backend | L | COMPLETED | TASK-104 |
+| TASK-106 | `/api/businesses*` + tablo ekranı (filtre, sıralama, inline e-posta/durum, toplu işlem) | backend + frontend | L | COMPLETED | TASK-104 |
+| TASK-107 | Detay sheet — galeri, yorumlar, skor kırılımı, notlar, şablon kopyala → WhatsApp | frontend + backend | L | COMPLETED | TASK-106 |
+| TASK-108 | Excel export (`/api/export`, exceljs) | backend | S | COMPLETED | TASK-106 |
+| TASK-109 | Dashboard — kartlar, funnel, son aramalar | frontend + backend | M | COMPLETED | TASK-105, TASK-106 |
 | TASK-110 | Ayarlar — şehirler, bonus kategoriler, şablon CRUD | frontend + backend | M | COMPLETED | TASK-102 |
-| TASK-111 | Playwright smoke + README gerçek kurulum adımları + DoD kontrolü | frontend + docs | M | PENDING | TASK-101..110 |
+| TASK-111 | Playwright smoke + README gerçek kurulum adımları + DoD kontrolü | frontend + docs | M | COMPLETED | TASK-101..110 |
 
 ---
 

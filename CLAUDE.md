@@ -23,7 +23,7 @@ sürecini (NEW → WON) yöneten lead-generation aracı. İlk pazar KKTC; ilk ku
 
 ## Mevcut Durum
 
-**Progress**: 12/18 task (%67) — Phase 0 bitti; Phase 1: iskelet, şema, auth, skor/durum/telefon, ayarlar tamam. Sıradaki TASK-105 (Places + SSE) ∥ TASK-106 (tablo).
+**Progress**: 18/18 task (%100) — MVP tamam. Açık: gerçek Places anahtarıyla doğrulama, login rate limit (internete açmadan önce). Sonraki: Phase 2 (ön koşul: ≥5 gerçek temas).
 
 > Session başında `/cold-start`, gün içinde `/status`.
 

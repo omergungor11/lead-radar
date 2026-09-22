@@ -408,15 +408,15 @@ satırı ekleme** (Co-Authored-By vb. yok).
 
 ## Bitti sayılma kriteri (Definition of Done)
 
-- [ ] `PLACES_MOCK=1 pnpm dev` ile anahtar olmadan tüm panel gezilebiliyor, 15 mock işletme görünüyor
-- [ ] Gerçek anahtarla "berber / Lefkoşa" araması ≤ 60 saniyede bitiyor, SSE ilerleme akıyor, sitesizler tabloya düşüyor
-- [ ] Tabloda fotoğraf, telefon (kopyala + WhatsApp), e-posta (inline), skor rozeti, durum dropdown çalışıyor
-- [ ] Detayda şablon "Kopyala ve WhatsApp'ı aç" → durum `CONTACTED`, `StatusChange` yazılmış
-- [ ] Filtreli Excel export açılıyor, telefon sütunu metin
-- [ ] Dashboard sayıları veritabanıyla tutarlı
-- [ ] `pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e` yeşil
-- [ ] README: ne, neden, kurulum, `.env` alanları, Places API anahtarı alma adımları, maliyet notu, yasal not, yol haritası
-- [ ] API anahtarı hiçbir client bundle'ında yok (`grep -r "AIza" .next/static` boş)
+- [x] `PLACES_MOCK=1 pnpm dev` ile anahtar olmadan tüm panel gezilebiliyor, 15 mock işletme görünüyor
+- [ ] Gerçek anahtarla "berber / Lefkoşa" araması ≤ 60 saniyede bitiyor, SSE ilerleme akıyor, sitesizler tabloya düşüyor — **kullanıcı doğrulayacak** (mock ile SSE akışı doğrulandı)
+- [x] Tabloda fotoğraf, telefon (kopyala + WhatsApp), e-posta (inline), skor rozeti, durum dropdown çalışıyor
+- [x] Detayda şablon "Kopyala ve WhatsApp'ı aç" → durum `CONTACTED`, `StatusChange` yazılmış
+- [x] Filtreli Excel export açılıyor, telefon sütunu metin
+- [x] Dashboard sayıları veritabanıyla tutarlı
+- [x] `pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e` yeşil
+- [x] README: ne, neden, kurulum, `.env` alanları, Places API anahtarı alma adımları, maliyet notu, yasal not, yol haritası
+- [x] API anahtarı hiçbir client bundle'ında yok (`grep -r "AIza" .next/static` boş)
 
 ---
 

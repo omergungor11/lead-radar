@@ -5,7 +5,7 @@
 
 ## Project Status
 - **Phase 0**: 7/7 ✓
-- **Phase 1**: 5/11 — 101/102/103/104/110 bitti; sıradaki TASK-105 (Places + SSE, backend) ∥ TASK-106 (tablo)
+- **Phase 1**: 11/11 ✓ — MVP tamam. Açık: gerçek Places anahtarıyla "berber / Lefkoşa" doğrulaması (kullanıcı)
 
 ## Important Patterns
 - Places Text Search'te field mask sadece `id, displayName, websiteUri, businessStatus, nextPageToken`; Details yalnız sitesizlere → maliyet ~%60 düşer
@@ -30,6 +30,15 @@
 - Durum geçişleri: NEW→CONTACTED izinli (şablon kopyala akışı); LOST/SKIPPED→CONTACTED izinli ama `requiresConfirmation` true. "Geri al" (CONTACTED→NEW) `canTransition`'da YOK → TASK-107'de PATCH'e ayrı undo yolu (son StatusChange'i geri al) gerekir
 - Client component'ler `lib/settings.ts` / `lib/message-templates.ts`'i (Prisma) import etmez; tipler `import type` ile veya client-safe `lib/templates.ts`'ten
 - Font değişkenleri `<html>`'de olmalı (globals.css `html { font-sans }`); body'ye koyarsan serif fallback
+- Mock Places şehre göre filtreler: sorgu fixture şehri içeriyorsa o şehrin 3 işletmesi + 5 elenen (8 tarandı / 3 sitesiz / 3 kaydedildi); yoksa 20 kaydın hepsi. Mock çağrılarında 80 ms yapay gecikme (UI ilerlemesi görünsün)
+- Arama işi sunucu sürecinde koşar → **tek instance** şart. Sunucu yeniden başlarsa RUNNING iş, stream açılınca `FAILED (searchInterrupted)` olur
+- İlerleme her 5 *taranan*da + sonda DB'ye yazılır, sonra SSE'ye yayınlanır (done sonrası refetch DONE görür)
+- `prisma migrate reset` AI agent'tan çalıştırılınca Prisma açık kullanıcı onayı ister (`PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`) — sessizce başarısız olur; bypass etme, kullanıcıya sor. `migrate deploy` serbest
+- E2E izole: `playwright.config.ts` webServer'a `DATABASE_URL=file:./e2e.db`, sabit şifre, mock verir; `reuseExistingServer: false`
+- Places Photos ücretli ve arama maliyetine dahil değil: gerçek modda tablo sayfası başına ≤50 thumbnail çağrısı (tarayıcı 302'yi 1 saat önbellekler). Maliyet artarsa thumbnail'ı kapat / lazy
+- Toast aksiyonları modal Sheet üstünde: `Toaster className="pointer-events-auto"` + Sheet `onInteractOutside` toaster'ı yok sayar
+- API istemcisi tek: `components/api-client.ts` (`apiFetch`, `apiFetchWithMeta`, `ApiRequestError` code taşır)
+- Ortak DTO sözleşmesi `lib/types.ts` (client-safe) — agent'lar değiştirmez, orchestrator değiştirir
 - Tarayıcı doğrulaması: `pnpm dev --port 3200` + Playwright script (şifre `.env`'den), sonra süreci kapat
 
 ## Working Credentials (Dev)

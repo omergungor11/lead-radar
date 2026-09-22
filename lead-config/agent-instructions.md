@@ -36,6 +36,12 @@ Her agent yalnızca kendi dizininde dosya oluşturur/düzenler:
 | devops | `*.config.*`, `tsconfig*.json`, lint/format config, `.env.example`, `.github/**`, `package.json` script'leri | Uygulama kodu, dependency ekleme |
 | docs | `*.md` | Kod dosyaları |
 
+### Süreç / port kuralları (2026-09-22 olayı sonrası)
+- Bu makinede BAŞKA projelerin dev server'ları çalışır (örn. `re-state-start` :3000). **`pkill`, `killall`, desenli `kill` YASAK.**
+- Kendi başlattığın süreci yalnızca PID ile kapat: `lsof -ti:<kendi portun>` → o PID'in cwd'si bu repo mu kontrol et → `kill <pid>`.
+- Her agent'a ayrı port verilir (3200+); 3000'e dokunulmaz.
+- `pnpm build` `.next`'i ezer — başka bir agent dev server çalıştırıyorsa build'i orchestrator'a bırak.
+
 ## 2. Paylaşılan Dosyalar
 
 | Dosya | Strateji |

@@ -3,6 +3,11 @@
 ## 2026-09-22
 
 ### Added
+- TASK-105: Places (New) istemcisi (field mask, backoff, zod), mock fixture, SSE'li arama işi, anahtarsız foto proxy, mock seed, tek işletme "Yenile"
+- TASK-106/107: `/api/businesses*` (filtre, PATCH geçiş/onay/undo, notlar, toplu durum), tablo ekranı, detay sheet (şablon → WhatsApp → CONTACTED + Geri al)
+- TASK-108: Filtreli Excel export (14 sütun, telefon metin)
+- TASK-109: Dashboard (6 kart, huni, son aramalar)
+- TASK-111: Playwright smoke (izole `prisma/e2e.db`), CI e2e job'u, README baştan yazıldı
 - TASK-104: `lib/scoring` (log-interpolasyonlu yorum puanı, bantlar), `lib/status` (geçiş tablosu + `requiresConfirmation`), `lib/phone` (KKTC/TR E.164, `waLink`), `lib/templates#renderTemplate`, `lib/categories` (~100 Türkçe etiket) — test-first, 199 test
 - TASK-110: Panel layout (sidebar, mobil Sheet), Ayarlar sayfası (Places durumu, şehir/bonus kategori editörü, skor yeniden hesapla, şablon CRUD + opt-out uyarısı); `/api/settings*`, `/api/templates*`, `/api/businesses/rescore`
 
