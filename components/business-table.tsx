@@ -23,6 +23,7 @@ import { BusinessRowActions } from "@/components/businesses/business-row-actions
 import { BusinessAvatar } from "@/components/businesses/business-avatar";
 import { PhoneCell } from "@/components/businesses/phone-cell";
 import { EditableEmailCell } from "@/components/businesses/editable-email-cell";
+import { SortableHead } from "@/components/businesses/sortable-head";
 import { StaleIndicator } from "@/components/businesses/stale-indicator";
 import { WebsiteBadge } from "@/components/website-badge";
 import { formatDate, formatRatingReviews } from "@/components/businesses/format";
@@ -53,8 +54,15 @@ export function BusinessTable() {
     filters.web,
     filters.q,
     filters.sort,
+    filters.dir,
     filters.page,
   ]);
+
+  const sortProps = {
+    sort: filters.sort ?? "score",
+    dir: filters.dir,
+    onSort: (sort: string, dir: string | undefined) => setFilter({ sort, dir }),
+  } as const;
 
   const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
 
@@ -109,15 +117,15 @@ export function BusinessTable() {
                 />
               </TableHead>
               <TableHead>{tr.businesses.columns.photo}</TableHead>
-              <TableHead>{tr.businesses.columns.name}</TableHead>
-              <TableHead>{tr.businesses.columns.category}</TableHead>
-              <TableHead>{tr.businesses.columns.city}</TableHead>
-              <TableHead>{tr.businesses.columns.phone}</TableHead>
-              <TableHead>{tr.businesses.columns.email}</TableHead>
-              <TableHead>{tr.businesses.columns.rating}</TableHead>
-              <TableHead>{tr.businesses.columns.score}</TableHead>
-              <TableHead>{tr.businesses.columns.status}</TableHead>
-              <TableHead>{tr.businesses.columns.lastContact}</TableHead>
+              <SortableHead column="name" label={tr.businesses.columns.name} {...sortProps} />
+              <SortableHead column="category" label={tr.businesses.columns.category} {...sortProps} />
+              <SortableHead column="city" label={tr.businesses.columns.city} {...sortProps} />
+              <SortableHead column="phone" label={tr.businesses.columns.phone} {...sortProps} />
+              <SortableHead column="email" label={tr.businesses.columns.email} {...sortProps} />
+              <SortableHead column="rating" label={tr.businesses.columns.rating} {...sortProps} />
+              <SortableHead column="score" label={tr.businesses.columns.score} {...sortProps} />
+              <SortableHead column="status" label={tr.businesses.columns.status} {...sortProps} />
+              <SortableHead column="lastContact" label={tr.businesses.columns.lastContact} {...sortProps} />
               <TableHead className="w-10">
                 <span className="sr-only">{tr.businesses.columns.actions}</span>
               </TableHead>

@@ -80,13 +80,49 @@ export interface BusinessDetail extends BusinessListItem {
   statusChanges: StatusChangeDto[];
 }
 
-export const BUSINESS_SORTS = ["score", "reviews", "recent"] as const;
+export const BUSINESS_SORTS = [
+  "score",
+  "reviews",
+  "recent",
+  "name",
+  "category",
+  "city",
+  "phone",
+  "email",
+  "rating",
+  "status",
+  "lastContact",
+] as const;
 export type BusinessSort = (typeof BUSINESS_SORTS)[number];
+
+/** `GET /api/businesses/categories` öğesi */
+export interface CategoryCount {
+  code: string;
+  count: number;
+}
+
+export const SORT_DIRS = ["asc", "desc"] as const;
+export type SortDir = (typeof SORT_DIRS)[number];
+
+/** `dir` verilmezse: metin kolonları A→Z, sayı/tarih kolonları büyükten küçüğe. */
+export const DEFAULT_SORT_DIR: Readonly<Record<BusinessSort, SortDir>> = {
+  score: "desc",
+  reviews: "desc",
+  recent: "desc",
+  name: "asc",
+  category: "asc",
+  city: "asc",
+  phone: "asc",
+  email: "asc",
+  rating: "desc",
+  status: "asc",
+  lastContact: "desc",
+};
 
 /**
  * `GET /api/businesses` ve `GET /api/export` aynı query parametrelerini alır:
- * `city, district (city ile birlikte anlamlı), category (primaryType), status, web (NONE|SOCIAL|PLATFORM|WEBSITE), band (HOT|WARM|COLD), q (ad/telefon içerir),
- * sort (varsayılan score, hepsi azalan), page (1'den), pageSize (varsayılan 50, max 200)`.
+ * `city, district (city ile birlikte anlamlı), category (primaryType), status, web (NONE|SOCIAL|PLATFORM|WEBSITE), band (HOT|WARM|COLD), q (ad/telefon/kategori içerir),
+ * sort (varsayılan score), dir (asc|desc; yoksa DEFAULT_SORT_DIR), page (1'den), pageSize (varsayılan 50, max 200)`.
  * Export ek olarak `ids=a,b,c` alır (verilirse filtre yerine yalnız bunlar).
  */
 export interface BusinessFilters {
@@ -98,6 +134,7 @@ export interface BusinessFilters {
   band?: ScoreBand;
   q?: string;
   sort?: BusinessSort;
+  dir?: SortDir;
   page?: number;
   pageSize?: number;
 }

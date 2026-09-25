@@ -468,6 +468,7 @@ function toTextSearchPlace(d: PlaceDetails): TextSearchPlace {
     displayName: d.displayName,
     websiteUri: d.websiteUri,
     businessStatus: d.businessStatus,
+    location: d.location,
   };
 }
 
@@ -489,20 +490,20 @@ export function haversineMeters(
 }
 
 function withinRestriction(details: PlaceDetails, options?: TextSearchOptions): boolean {
-  const circle = options?.locationRestriction?.circle;
-  if (!circle) return true;
+  const area = options?.area;
+  if (!area) return true;
   const location = details.location;
   if (!location) return false;
   const distance = haversineMeters(
-    { lat: circle.center.latitude, lng: circle.center.longitude },
+    { lat: area.lat, lng: area.lng },
     { lat: location.latitude, lng: location.longitude },
   );
-  return distance <= circle.radius;
+  return distance <= area.radiusM;
 }
 
 /**
  * Filtre iki türlü:
- * - `locationRestriction` verilirse (harita ile alan araması) tüm fixture'lar merkeze olan
+ * - `area` verilirse (harita ile alan araması) tüm fixture'lar merkeze olan
  *   haversine mesafesine göre elenir; şehir metni yok sayılır. Yarıçap büyükse hepsi döner.
  * - Verilmezse: sorgu bir fixture şehrini içeriyorsa o şehrin işletmeleri (Lefkoşa/Girne 4,
  *   diğerleri 3), değilse 17'nin tamamı.
@@ -529,7 +530,7 @@ export function createMockPlacesClient(options: MockClientOptions = {}): PlacesC
       await delay();
       const { saved, excluded } = buildAll(now());
       let fixtures: MockFixture[];
-      if (options?.locationRestriction) {
+      if (options?.area) {
         fixtures = [...saved, ...excluded].filter((f) => withinRestriction(f.details, options));
       } else {
         const q = foldTr(query);

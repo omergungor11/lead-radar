@@ -21,7 +21,7 @@ interface ActiveJob {
   area?: SearchArea;
 }
 
-export function SearchesView() {
+export function SearchesView({ mapsApiKey }: { mapsApiKey: string | null }) {
   const [activeJob, setActiveJob] = useState<ActiveJob | null>(null);
   const attachedFromHistory = useRef(false);
 
@@ -55,6 +55,7 @@ export function SearchesView() {
     <div className="flex flex-col gap-6">
       <SearchForm
         disabled={isJobRunning}
+        mapsApiKey={mapsApiKey}
         onStarted={(jobId, city, district, area) => setActiveJob({ id: jobId, city, district, area })}
       />
 

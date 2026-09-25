@@ -44,7 +44,7 @@
 - İlçe: `lib/districts.ts` üretilmiş veri (yeniden üretmek için turkey-neighbourhoods `getDistrictsByCityCode`). `isDistrictOf` yazıma duyarlı — client listedeki yazımı aynen yollar. Mock'ta ilçe adı KKTC şehriyle aynıysa (Aksaray/Güzelyurt) yanlış eşleşir — önemsiz
 - Arama kategori önerileri `lib/config.ts` `SEARCH_CATEGORY_GROUPS` / `SEARCH_QUICK_PICKS` (grup etiketleri `tr.searches.form.categoryGroups`). Bonus listesi DB'de — `DEFAULT_BONUS_CATEGORIES` değişirse mevcut DB'ye birleştir + rescore
 - Lead tanımı: `classifyWebsite(uri).kind !== "WEBSITE"` (D-008). Yeni platform/sosyal domain → `lib/website.ts` RULES + `tests/website.test.ts`. Mock seed 17 (Lefkoşa/Girne aramaları 7 tarandı / 4 sitesiz / 1 linkOnly / 4 kaydedildi)
-- MapLibre v6 + Turbopack: paket içi module worker sessizce ölür → harita boş kalır, hata da vermez. Çözüm: `public/maplibre-gl-worker.mjs` (+shared) `postinstall` ile kopyalanır, `setWorkerUrl("/maplibre-gl-worker.mjs")`. `public/**` eslint ignore'da
+- Places Text Search `locationRestriction` yalnız `rectangle` kabul eder; `circle` → 400 INVALID_ARGUMENT (circle yalnız `locationBias`'ta). Alan araması: dairenin kutusu gönderilir + `places.location` ile daire dışı elenir
 - Alan modunda `city` kullanıcıdan istenmez: `nearestCity(area, DB şehirleri)` kayıt etiketi olur, ilçe gönderilmez
 - Alan aramasında sorgu metni yalnız kategori; coğrafyayı `locationRestriction` circle belirler (max 50 km). Mock istemci de mesafeye göre filtreler
 - Silme kalıcı (D-010); mock veriyi geri getirmek için `PLACES_MOCK=1 pnpm db:seed`

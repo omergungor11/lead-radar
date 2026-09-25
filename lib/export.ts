@@ -173,9 +173,10 @@ export async function fetchExportRows(
 ): Promise<{ rows: ExportRow[]; truncated: boolean }> {
   const where = "ids" in query ? { id: { in: query.ids } } : buildWhere(query.filters);
   const sort = "ids" in query ? undefined : query.filters.sort;
+  const dir = "ids" in query ? undefined : query.filters.dir;
   const found = await db.business.findMany({
     where,
-    orderBy: buildOrderBy(sort),
+    orderBy: buildOrderBy(sort, dir),
     take: EXPORT_MAX_ROWS + 1,
     select: {
       name: true,

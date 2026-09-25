@@ -106,7 +106,7 @@ export function cityCenter(city: string | null | undefined): LatLng | null {
   return (city && CITY_COORDS[city]) || null;
 }
 
-/** Places locationRestriction circle sınırları (metre) */
+/** Harita ile alan araması yarıçap sınırları (metre) */
 export const SEARCH_RADIUS_MIN_M = 200;
 export const SEARCH_RADIUS_MAX_M = 50_000;
 export const SEARCH_RADIUS_DEFAULT_M = 2_000;

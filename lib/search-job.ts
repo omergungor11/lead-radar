@@ -7,7 +7,6 @@ import { PLACES_COST, PLACES_MAX_RESULTS, SETTING_KEYS } from "@/lib/config";
 import { db } from "@/lib/db";
 import { upsertBusiness } from "@/lib/ingest";
 import {
-  circleRestriction,
   PlacesError,
   TEXT_SEARCH_PAGE_SIZE,
   type PlacesClient,
@@ -133,9 +132,7 @@ export async function runSearchJob(input: SearchJobInput, client: PlacesClient):
     const textQuery = area
       ? input.query.trim()
       : buildTextQuery(input.query, input.city, input.district);
-    const options: TextSearchOptions | undefined = area
-      ? { locationRestriction: circleRestriction(area) }
-      : undefined;
+    const options: TextSearchOptions | undefined = area ? { area } : undefined;
     let pageToken: string | undefined;
 
     for (let page = 0; page < MAX_PAGES && c.scanned < PLACES_MAX_RESULTS; page++) {

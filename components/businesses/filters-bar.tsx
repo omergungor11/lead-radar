@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { apiFetch } from "@/components/api-client";
 import { CityCombobox } from "@/components/city-combobox";
+import { CategoryCombobox } from "@/components/businesses/category-combobox";
 import { DistrictCombobox } from "@/components/district-combobox";
 import type { SettingsData } from "@/components/settings/types";
 import { districtsOf } from "@/lib/districts";
@@ -40,7 +41,7 @@ interface FiltersBarProps {
   onChange: (
     patch: Partial<
       Record<
-        "city" | "district" | "category" | "status" | "band" | "web" | "q" | "sort",
+        "city" | "district" | "category" | "status" | "band" | "web" | "q" | "sort" | "dir",
         string | undefined
       >
     >,
@@ -106,12 +107,10 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
         />
       ) : null}
 
-      <Input
-        value={filters.category ?? ""}
-        onChange={(e) => onChange({ category: e.target.value || undefined })}
-        placeholder={tr.businesses.filters.categoryPlaceholder}
-        className="w-full sm:w-44"
-        aria-label={tr.businesses.filters.categoryLabel}
+      <CategoryCombobox
+        value={filters.category}
+        onChange={(category) => onChange({ category })}
+        className="sm:w-48"
       />
 
       <Select
@@ -165,7 +164,9 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
         </SelectContent>
       </Select>
 
-      <Select value={filters.sort ?? "score"} onValueChange={(v) => onChange({ sort: v })}>
+      <Select
+        value={SORTS.some((s) => s.value === (filters.sort ?? "score")) ? (filters.sort ?? "score") : ""}
+        onValueChange={(v) => onChange({ sort: v, dir: undefined })}>
         <SelectTrigger className="w-full sm:w-44" aria-label={tr.businesses.filters.sortLabel}>
           <SelectValue placeholder={tr.businesses.filters.sortLabel} />
         </SelectTrigger>

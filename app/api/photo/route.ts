@@ -55,12 +55,13 @@ export async function GET(request: Request): Promise<Response> {
   const width = parseWidth(url.searchParams.get("w"));
   const mock = isPlacesMock();
 
-  const validName = REAL_NAME.test(name) || (mock && MOCK_NAME.test(name));
-  if (!validName || width === null) {
+  const isMockName = MOCK_NAME.test(name);
+  if (!(REAL_NAME.test(name) || isMockName) || width === null) {
     return apiError(400, "VALIDATION_ERROR", tr.errors.invalidPhotoName);
   }
 
-  if (mock) {
+  // Mock modda her ad, gerçek modda mock adlı foto (seed / mock modda kaydedilmiş işletme) SVG döner — dışarı çıkmaz.
+  if (isMockName || mock) {
     return new Response(mockPhotoSvg(name, width), {
       status: 200,
       headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": CACHE_CONTROL },

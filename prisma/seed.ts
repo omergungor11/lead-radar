@@ -10,27 +10,28 @@ const WHATSAPP_SOCIAL_TEMPLATE_ID = "tpl-whatsapp-sosyal";
 // Paragraf içinde satır kırma yok — WhatsApp metni olduğu gibi gösterir.
 // Şehir eki kullanma ("{{sehir}}'de" → "Lefkoşa'de" ünlü uyumu bozulur); "bölgesinde" nötr.
 const WHATSAPP_BODY = [
-  "Merhaba, ben Piton Studios'tan yazıyorum.",
-  "{{isletme}} işletmenizi Google Haritalar'da inceledim — {{sehir}} bölgesinde {{puan}} puan ve {{yorumSayisi}} yorumla gerçekten güçlü bir izleniminiz var. Ama bir web siteniz olmadığını fark ettim; yani bu puanı ve yorumları, sizi internette arayan müşterilere gösterecek bir vitrininiz yok.",
-  "Size özel, mobil uyumlu ve hızlı bir web sitesi hazırlamak isteriz. Kısa bir görüşmeyle ihtiyacınızı konuşabilir miyiz?",
-  "Bu tür mesajlar almak istemiyorsanız \"istemiyorum\" yazmanız yeterli, bir daha rahatsız etmeyeceğim.",
+  "Merhaba, kolay gelsin.",
+  "Ben Piton Studios'tan yazıyorum, {{sehir}} bölgesindeki işletmelere web sitesi yapıyoruz. Google'da {{isletme}} sayfanıza denk geldim ama bir web siteniz görünmüyor.",
+  "Size uygun olabilecek birkaç örnek göstermemi ister misiniz? Beğenirseniz konuşuruz, zorunluluk yok.",
+  "İlgilenmiyorsanız yazmanız yeterli, bir daha rahatsız etmeyeceğim.",
 ].join("\n\n");
 
 const EMAIL_BODY = [
-  "Konu: {{isletme}} için web sitesi teklifi",
+  "Konu: {{isletme}} web sitesi hakkında",
   "Merhaba,",
-  "Piton Studios'tan yazıyorum. {{isletme}} işletmenizi Google Haritalar üzerinde inceledim — {{sehir}} bölgesinde {{puan}} puan ve {{yorumSayisi}} yorumla dikkat çekici bir müşteri memnuniyetiniz var. Ancak bir web siteniz bulunmuyor; bu da potansiyel müşterilerin sizi internette bulmasını zorlaştırıyor.",
-  "Size özel, mobil uyumlu ve hızlı yüklenen bir web sitesi hazırlayabiliriz. Uygun olduğunuzda kısa bir görüşme ayarlayabilir miyiz?",
-  "Bu tür e-postalar almak istemiyorsanız bu mesaja \"istemiyorum\" yazarak yanıt vermeniz yeterli, bir daha rahatsız etmeyeceğim.",
+  "Ben Piton Studios'tan yazıyorum, {{sehir}} bölgesindeki işletmelere web sitesi hazırlıyoruz. Google'da {{isletme}} sayfanıza denk geldim ve bir web sitenizin olmadığını gördüm.",
+  "Müşterilerin çoğu bir yere gitmeden önce internetten bakıyor. Adresinizi, çalışma saatlerinizi, fotoğraflarınızı ve iletişim bilgilerinizi tek bir sayfada bulabilmeleri epey fark yaratıyor. Size uygun olabilecek birkaç örnek göndermemi ister misiniz?",
+  "İlgilenmiyorsanız bu e-postaya kısaca yanıt vermeniz yeterli, bir daha rahatsız etmeyeceğim.",
+  "İyi çalışmalar,\nPiton Studios",
 ].join("\n\n");
 
 // Sitesi yerine yalnız sosyal medya / platform profili olan işletmeler için ({{platform}} → "Instagram";
 // panel markayı bilmiyorsa "sosyal medya").
 const WHATSAPP_SOCIAL_BODY = [
-  "Merhaba, ben Piton Studios'tan yazıyorum.",
-  "{{isletme}} işletmenizin {{platform}} hesabını gördüm — {{sehir}} bölgesinde {{puan}} puan ve {{yorumSayisi}} yorumla gerçekten güçlü bir izleniminiz var. Ama müşterileriniz sizi Google'da aradığında karşılarına çıkacak kendi web siteniz yok.",
-  "Sosyal medyanızı bırakmanıza gerek yok; onu tamamlayan, hızlı ve mobil uyumlu bir web sitesi hazırlamak isteriz. Kısa bir görüşmeyle ihtiyacınızı konuşabilir miyiz?",
-  "Bu tür mesajlar almak istemiyorsanız \"istemiyorum\" yazmanız yeterli, bir daha rahatsız etmeyeceğim.",
+  "Merhaba, kolay gelsin.",
+  "Ben Piton Studios'tan yazıyorum, {{sehir}} bölgesindeki işletmelere web sitesi yapıyoruz. Google'da {{isletme}} diye aratınca {{platform}} hesabınız çıkıyor ama kendi web siteniz yok.",
+  "{{platform}} hesabınız kalsın, yanına sade bir web sitesi çok iyi gider: Google'da daha kolay bulunursunuz, müşteri de adres, saat ve iletişim bilgilerini tek yerde görür. Birkaç örnek göstermemi ister misiniz?",
+  "İlgilenmiyorsanız yazmanız yeterli, bir daha rahatsız etmeyeceğim.",
 ].join("\n\n");
 
 async function main(): Promise<void> {

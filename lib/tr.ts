@@ -227,7 +227,11 @@ export const tr = {
         "Büyük şehirlerde ilçe seçin — Google her sorguda en fazla 60 sonuç verir.",
       mapToggleLabel: "Haritadan alan seç",
       mapHint:
-        "Haritaya tıklayarak arama merkezini belirleyin, işaretçiyi sürükleyerek taşıyabilirsiniz. Bu modda Google sorgusuna şehir/ilçe eklenmez, yalnızca çizdiğiniz alan taranır.",
+        "Haritaya tıklayarak arama merkezini belirleyin. Daireyi sürükleyerek taşıyabilir, kenarındaki tutamaçla büyütüp küçültebilirsiniz. Bu modda Google sorgusuna şehir/ilçe eklenmez, yalnızca çizdiğiniz alan taranır.",
+      mapKeyMissing:
+        "Harita için .env dosyasına GOOGLE_MAPS_BROWSER_KEY ekleyin (yalnız Maps JavaScript API'ye açık, HTTP referrer kısıtlı ayrı bir anahtar) ve sunucuyu yeniden başlatın.",
+      mapLoadError:
+        "Google Haritası yüklenemedi. GOOGLE_MAPS_BROWSER_KEY için Maps JavaScript API'nin etkin olduğunu ve referrer kısıtının bu adresi kapsadığını kontrol edin.",
       radiusLabel: "Yarıçap",
       areaNotSelected: "Haritadan bir merkez seçin",
       submit: "Tara",
@@ -307,6 +311,8 @@ export const tr = {
       districtLabel: "İlçe",
       categoryLabel: "Kategori",
       categoryPlaceholder: "Kategori ara (örn. restoran)",
+      categoryAll: "Tüm kategoriler",
+      categoryEmpty: "Kategori bulunamadı",
       statusLabel: "Durum",
       statusAll: "Tüm durumlar",
       bandLabel: "Skor bandı",
@@ -317,12 +323,13 @@ export const tr = {
       webSocial: "Sadece sosyal medya",
       webPlatform: "Platform profili",
       webWebsite: "Web sitesi var",
-      searchPlaceholder: "İsim veya telefon ara…",
+      searchPlaceholder: "İsim, telefon veya kategori ara…",
       sortLabel: "Sırala",
       sortScore: "Skora göre",
       sortReviews: "Yorum sayısına göre",
       sortRecent: "Eklenme tarihine göre",
     },
+    sortBy: (column: string) => `${column} kolonuna göre sırala`,
     columns: {
       photo: "Fotoğraf",
       name: "İşletme",

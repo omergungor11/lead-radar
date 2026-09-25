@@ -18,6 +18,16 @@ export const CATEGORY_LABELS: Record<string, string> = {
   meal_takeaway: "Paket servis",
   meal_delivery: "Yemek teslimatı",
   ice_cream_shop: "Dondurmacı",
+  family_restaurant: "Aile restoranı",
+  fine_dining_restaurant: "Fine dining restoran",
+  middle_eastern_restaurant: "Ortadoğu mutfağı",
+  kebab_shop: "Kebapçı",
+  bar_and_grill: "Izgara & bar",
+  hamburger_restaurant: "Hamburgerci",
+  spanish_restaurant: "İspanyol restoranı",
+  greek_restaurant: "Rum / Yunan restoranı",
+  sandwich_shop: "Sandviççi",
+  rest_stop: "Dinlenme tesisi",
   dessert_shop: "Tatlıcı",
   // Güzellik & bakım
   barber_shop: "Berber",
@@ -103,6 +113,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   secondary_school: "Ortaokul / lise",
   university: "Üniversite",
   driving_school: "Sürücü kursu",
+  private_guest_room: "Pansiyon odası",
   // Genel
   point_of_interest: "İlgi noktası",
   establishment: "İşletme",
@@ -111,4 +122,20 @@ export const CATEGORY_LABELS: Record<string, string> = {
 export function categoryLabel(type: string | null | undefined): string {
   if (!type) return "—";
   return CATEGORY_LABELS[type] ?? type;
+}
+
+function foldTr(value: string): string {
+  return value.toLocaleLowerCase("tr-TR").trim();
+}
+
+/**
+ * Serbest metin aramasındaki kategori eşleşmesi: Türkçe etiketi ("kafe", "balık restoranı") ya da
+ * ham kodu ("cafe") `q`'yu içeren Places tip kodları. 2 harften kısa sorgu kategoriye bakmaz.
+ */
+export function matchCategoryCodes(q: string): string[] {
+  const needle = foldTr(q);
+  if (needle.length < 2) return [];
+  return Object.entries(CATEGORY_LABELS)
+    .filter(([code, label]) => foldTr(label).includes(needle) || code.includes(needle.replace(/\s+/g, "_")))
+    .map(([code]) => code);
 }

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-25
+
+### Fixed
+- Harita ile alan araması 400 dönüyordu: Places Text Search `locationRestriction.circle` kabul etmiyor → dairenin çevreleyen `rectangle`'ı gönderilir, `places.location` ile daire dışı elenir (D-011)
+- Seed/mock işletmelerin fotoğrafları gerçek modda kırıktı: `mock/photo-N` adları her modda SVG döner
+
+### Changed
+- Harita MapLibre/Carto'dan Google Maps JS'e geçti (`GOOGLE_MAPS_BROWSER_KEY`, ayrı + referrer kısıtlı anahtar); daire sürüklenir, kenar tutamacıyla yarıçap değişir
+- Mesaj şablonları daha kısa ve doğal; puan/yorum sayısı şablondan çıktı
+
+### Added
+- İşletmeler tablosunda kolon başlığına tıklayarak sıralama (ad, kategori, şehir, telefon, e-posta, puan, skor, durum, son temas; `dir=asc|desc`, boşlar sonda)
+- Serbest metin araması kategoriye de bakar (Türkçe etiket veya Places kodu; birincil + ikincil tipler)
+- Kategori filtresi aranabilir dropdown (`GET /api/businesses/categories`, adetli); 11 yeni Türkçe kategori etiketi
+
 ## 2026-09-22
 
 ### Fixed

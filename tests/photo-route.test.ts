@@ -81,9 +81,11 @@ describe("GET /api/photo (gerçek mod)", () => {
     );
   });
 
-  it("gerçek modda mock adı reddedilir; anahtar yoksa 503", async () => {
+  it("gerçek modda mock adı SVG döner (seed işletmeleri kırık görünmesin); anahtar yoksa 503", async () => {
     setEnv({ PLACES_MOCK: undefined, GOOGLE_PLACES_API_KEY: "AIzaTEST" });
-    expect((await get("name=mock%2Fphoto-1")).status).toBe(400);
+    const mockRes = await get("name=mock%2Fphoto-1");
+    expect(mockRes.status).toBe(200);
+    expect(mockRes.headers.get("Content-Type")).toContain("image/svg+xml");
 
     setEnv({ PLACES_MOCK: undefined, GOOGLE_PLACES_API_KEY: "" });
     const res = await get(`name=${encodeURIComponent("places/a/photos/b")}`);

@@ -5,9 +5,9 @@ import { hasOptOut, renderTemplate } from "@/lib/templates";
 
 // prisma/seed.ts'deki şablonların opt-out cümleleri
 const SEED_WHATSAPP_TAIL =
-  'Bu tür mesajlar almak istemiyorsanız "istemiyorum" yazmanız yeterli, bir daha rahatsız etmeyeceğim.';
+  "İlgilenmiyorsanız yazmanız yeterli, bir daha rahatsız etmeyeceğim.";
 const SEED_EMAIL_TAIL =
-  'Bu tür e-postalar almak istemiyorsanız bu mesaja "istemiyorum" yazarak yanıt vermeniz yeterli, bir daha rahatsız etmeyeceğim.';
+  "İlgilenmiyorsanız bu e-postaya kısaca yanıt vermeniz yeterli, bir daha rahatsız etmeyeceğim.";
 
 describe("hasOptOut", () => {
   it("seed şablonları → true", () => {
@@ -52,8 +52,8 @@ describe("seed: sosyal medyası olan WhatsApp şablonu", () => {
       yorumSayisi: 180,
       platform: "Instagram",
     });
-    expect(out).toContain("Kordon Kafe işletmenizin Instagram hesabını");
-    expect(out).toContain("Girne bölgesinde 4,4 puan ve 180 yorumla");
+    expect(out).toContain("Google'da Kordon Kafe diye aratınca Instagram hesabınız çıkıyor");
+    expect(out).toContain("Girne bölgesindeki işletmelere");
     expect(out).not.toMatch(/\{\{/);
   });
 });

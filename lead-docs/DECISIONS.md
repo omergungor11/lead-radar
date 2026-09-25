@@ -2,7 +2,13 @@
 
 > Her mimari/teknolojik karar buraya. En yeni en üstte.
 
-## D-009: Harita MapLibre + Carto, Google Maps JS değil — 2026-09-23
+## D-011: Harita Google Maps JS'e geçti; alan kısıtı rectangle — 2026-09-23
+
+**Karar**: D-009'un yerine geçer. Harita `@googlemaps/js-api-loader` + Maps JavaScript API; daire sürüklenebilir ve kenar tutamacıyla yarıçap değişir. Anahtar `GOOGLE_MAPS_BROWSER_KEY` — Places anahtarından ayrı, yalnız Maps JS API + HTTP referrer kısıtlı; sunucu sayfası çalışma anında prop olarak verir (NEXT_PUBLIC değil). Places Text Search'e `locationRestriction.rectangle` (dairenin çevreleyen kutusu) gönderilir, `places.location` ile köşedeki sonuçlar daire dışıysa elenir.
+**Gerekçe**: Kullanıcı MapLibre/Carto'dan memnun değildi. Asıl 400 hatası haritadan değil: Text Search `locationRestriction` yalnız `rectangle` kabul eder, `circle` → 400 INVALID_ARGUMENT. `places.location` Enterprise SKU'da zaten faturalanan `websiteUri` yanında ek maliyet getirmez.
+**Alternatifler**: `locationBias.circle` (circle kabul eder ama dışarıdan sonuç da döner → alan araması anlamını yitirir).
+
+## D-009: ~~Harita MapLibre + Carto~~ (D-011 ile değişti) — 2026-09-23
 
 **Karar**: Aramalar sayfasındaki harita MapLibre GL v6 + ücretsiz Carto Positron vektör stili. Haritada merkez + yarıçap seçilir, arama Places `locationRestriction` (circle) ile o daireyle sınırlanır; bu modda sorgu metnine şehir/ilçe eklenmez. Şehir merkezleri `lib/geo.ts` (Nominatim ile bir kerelik üretildi, ODbL).
 **Gerekçe**: Kullanıcıya soruldu; iki seçenek de onun hacminde ücretsiz. Google Maps JS ayrı bir tarayıcı anahtarı + referrer kısıtı + kota takibi ister; MapLibre anahtarsız ve $0. Alan araması 60 sonuç sınırını mahalle ölçeğine bölmeyi sağlar.

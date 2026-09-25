@@ -51,6 +51,8 @@ interface SearchableComboboxProps {
   id?: string;
   className?: string;
   "aria-label"?: string;
+  /** Öğenin görünen adı (değer kod, görünen ad farklıysa); arama hem ada hem değere bakar */
+  getLabel?: (item: string) => string;
 }
 
 export function SearchableCombobox({
@@ -65,6 +67,7 @@ export function SearchableCombobox({
   id,
   className,
   "aria-label": ariaLabel,
+  getLabel = (item) => item,
 }: SearchableComboboxProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const visibleGroups = groups.filter((g) => g.items.length > 0);
@@ -88,7 +91,7 @@ export function SearchableCombobox({
           className={cn("w-full justify-between font-normal", className)}
         >
           <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {value ?? allLabel ?? placeholder}
+            {value !== undefined ? getLabel(value) : (allLabel ?? placeholder)}
           </span>
           <ChevronsUpDown className="opacity-50" />
         </Button>
@@ -112,8 +115,12 @@ export function SearchableCombobox({
             {visibleGroups.map((group, i) => (
               <CommandGroup key={group.label ?? i} heading={group.label}>
                 {group.items.map((item) => (
-                  <CommandItem key={item} value={item} onSelect={() => select(item)}>
-                    {item}
+                  <CommandItem
+                    key={item}
+                    value={getLabel(item) === item ? item : `${getLabel(item)} ${item}`}
+                    onSelect={() => select(item)}
+                  >
+                    {getLabel(item)}
                     <Check className={cn("ml-auto", value === item ? "opacity-100" : "opacity-0")} />
                   </CommandItem>
                 ))}

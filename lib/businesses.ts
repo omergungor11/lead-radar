@@ -5,18 +5,23 @@ import type { Business, Note, Prisma, StatusChange } from "@prisma/client";
 import { z } from "zod";
 import { STALE_AFTER_DAYS } from "@/lib/config";
 import { db } from "@/lib/db";
+import { matchCategoryCodes } from "@/lib/categories";
 import { toE164 } from "@/lib/phone";
 import { SCORE_SIGNALS, scoreBand, type ScoreBand, type ScoreBreakdownItem } from "@/lib/scoring";
 import { canTransition, isStatus, requiresConfirmation, STATUSES, type Status } from "@/lib/status";
 import { tr } from "@/lib/tr";
 import {
   BUSINESS_SORTS,
+  DEFAULT_SORT_DIR,
+  SORT_DIRS,
   type BulkStatusResult,
   type BusinessDetail,
   type BusinessFilters,
   type BusinessListItem,
   type BusinessSort,
+  type CategoryCount,
   type NoteDto,
+  type SortDir,
   type PageMeta,
   type PhotoRef,
   type ReviewDto,
@@ -50,6 +55,7 @@ export const businessFiltersSchema = z.object({
   band: z.preprocess(blankToUndefined, z.enum(SCORE_BANDS).optional()),
   q: optionalText,
   sort: z.preprocess(blankToUndefined, z.enum(BUSINESS_SORTS).default("score")),
+  dir: z.preprocess(blankToUndefined, z.enum(SORT_DIRS).optional()),
   page: z.preprocess(blankToUndefined, z.coerce.number().int().min(1).default(1)),
   pageSize: z.preprocess(
     blankToUndefined,
@@ -60,6 +66,7 @@ export const businessFiltersSchema = z.object({
 /** Varsayılanları uygulanmış filtreler (sort/page/pageSize her zaman dolu). */
 export type ParsedBusinessFilters = BusinessFilters & {
   sort: BusinessSort;
+  dir?: SortDir;
   page: number;
   pageSize: number;
 };
@@ -100,6 +107,10 @@ export function buildWhere(filters: BusinessFilters): Prisma.BusinessWhereInput 
       { phoneE164: { contains: filters.q } },
     ];
     // "0392 228 12" gibi yazılan numara E.164'te "+90392228…" olarak durur → rakamları ara
+    // Kategori: Türkçe etiket/kod eşleşen tipler — birincil tip ya da ikincil `types` listesinde
+    for (const code of matchCategoryCodes(filters.q)) {
+      or.push({ primaryType: code }, { types: { contains: `"${code}"` } });
+    }
     const digits = filters.q.replace(/\D/g, "").replace(/^0+/, "");
     if (digits.length >= 3 && digits !== filters.q) or.push({ phoneE164: { contains: digits } });
     where.OR = or;
@@ -107,15 +118,41 @@ export function buildWhere(filters: BusinessFilters): Prisma.BusinessWhereInput 
   return where;
 }
 
-/** Hepsi azalan; `id` eşitlikte sayfalamayı kararlı tutar. */
-export function buildOrderBy(sort: BusinessSort = "score"): Prisma.BusinessOrderByWithRelationInput[] {
+/**
+ * Boş değerler (null) yönden bağımsız hep sonda; `id` eşitlikte sayfalamayı kararlı tutar.
+ * Metin sıralaması SQLite bayt sırasıdır (Ç/Ş/Ü gibi harfler Z'den sonra gelir); kategori ham
+ * `primaryType` koduna göre sıralanır — aynı kategoriler yan yana toplanır.
+ */
+export function buildOrderBy(
+  sort: BusinessSort = "score",
+  dir: SortDir = DEFAULT_SORT_DIR[sort],
+): Prisma.BusinessOrderByWithRelationInput[] {
+  const nullsLast = { sort: dir, nulls: "last" } as const;
+  const byReviews = { userRatingCount: { sort: "desc", nulls: "last" } } as const;
+  const tail = { id: "asc" } as const;
   switch (sort) {
     case "reviews":
-      return [{ userRatingCount: { sort: "desc", nulls: "last" } }, { id: "asc" }];
+      return [{ userRatingCount: nullsLast }, tail];
     case "recent":
-      return [{ firstSeenAt: "desc" }, { id: "asc" }];
+      return [{ firstSeenAt: dir }, tail];
     case "score":
-      return [{ score: "desc" }, { userRatingCount: { sort: "desc", nulls: "last" } }, { id: "asc" }];
+      return [{ score: dir }, byReviews, tail];
+    case "name":
+      return [{ name: dir }, tail];
+    case "category":
+      return [{ primaryType: nullsLast }, { score: "desc" }, tail];
+    case "city":
+      return [{ city: dir }, { district: { sort: dir, nulls: "last" } }, { name: "asc" }, tail];
+    case "phone":
+      return [{ phone: nullsLast }, tail];
+    case "email":
+      return [{ email: nullsLast }, tail];
+    case "rating":
+      return [{ rating: nullsLast }, byReviews, tail];
+    case "status":
+      return [{ status: dir }, { score: "desc" }, tail];
+    case "lastContact":
+      return [{ lastContactedAt: nullsLast }, tail];
   }
 }
 
@@ -292,7 +329,7 @@ export async function listBusinesses(
   const [rows, total] = await db.$transaction([
     db.business.findMany({
       where,
-      orderBy: buildOrderBy(filters.sort),
+      orderBy: buildOrderBy(filters.sort, filters.dir),
       skip: (filters.page - 1) * filters.pageSize,
       take: filters.pageSize,
       select: listSelect,
@@ -491,4 +528,16 @@ export async function bulkUpdateStatus(
     );
   }
   return { updated: eligible.length, skipped };
+}
+
+/** Kayıtlı işletmelerdeki birincil kategoriler, en kalabalıktan aza. */
+export async function listCategoryCounts(): Promise<CategoryCount[]> {
+  const rows = await db.business.groupBy({
+    by: ["primaryType"],
+    where: { primaryType: { not: null } },
+    _count: { _all: true },
+  });
+  return rows
+    .flatMap((r) => (r.primaryType ? [{ code: r.primaryType, count: r._count._all }] : []))
+    .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
 }

@@ -1,195 +1,188 @@
 "use client";
 
-// Harita ile arama alanı seçimi — anahtarsız/ücretsiz Carto Positron vektör stiliyle MapLibre.
+// Harita ile arama alanı seçimi — Google Maps JavaScript API.
 // Yalnızca arama merkezini/yarıçapını seçtirir; mevcut işletme pinleri GÖSTERİLMEZ
 // (BusinessListItem'da lat/lng yok, yalnızca BusinessDetail'de var — bu bileşen listeyle çalışmaz).
-// SSR yok: `next/dynamic({ ssr: false })` ile yüklenmeli (MapLibre `window` gerektirir).
+// Anahtar: GOOGLE_MAPS_BROWSER_KEY — Places anahtarından AYRI, yalnız "Maps JavaScript API" +
+// HTTP referrer kısıtlı tarayıcı anahtarı. Sunucu sayfası çalışma anında prop olarak verir
+// (NEXT_PUBLIC değil → build çıktısına gömülmez). SSR yok: `next/dynamic({ ssr: false })`.
 
 import { useEffect, useRef, useState } from "react";
-import { Map as MapLibreMap, Marker, setWorkerUrl } from "maplibre-gl";
-import type { GeoJSONSource, LngLatLike } from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
+import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
 import { cn } from "@/lib/utils";
-import { SEARCH_RADIUS_DEFAULT_M, type LatLng } from "@/lib/geo";
+import { SEARCH_RADIUS_DEFAULT_M, SEARCH_RADIUS_MAX_M, SEARCH_RADIUS_MIN_M, type LatLng } from "@/lib/geo";
 import type { SearchArea } from "@/lib/types";
+import { tr } from "@/lib/tr";
 
-// Turbopack, maplibre'nin paket içi module-worker'ını başlatamıyor (işçi sessizce ölüyor, harita boş kalır).
-// Worker `public/` altından servis edilir; kopyalar `scripts/copy-maplibre-worker.mjs` ile güncellenir.
-if (typeof window !== "undefined") {
-  setWorkerUrl("/maplibre-gl-worker.mjs");
-}
-
-const STYLE_URL = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
-const SOURCE_ID = "search-area-circle";
-const CIRCLE_STEPS = 64;
 const AREA_COLOR = "#2563eb";
 
-interface CirclePolygonFeature {
-  type: "Feature";
-  properties: Record<string, never>;
-  geometry: { type: "Polygon"; coordinates: [number, number][][] };
-}
+// setOptions yalnız ilk importLibrary'den önce bir kez çağrılabilir.
+let optionsSet = false;
 
-interface CircleFeatureCollection {
-  type: "FeatureCollection";
-  features: CirclePolygonFeature[];
-}
-
-const EMPTY_FC: CircleFeatureCollection = { type: "FeatureCollection", features: [] };
-
-/** Metre yarıçaplı çemberi 64 kenarlı çokgene çevirir (enlem düzeltmeli derece dönüşümü). */
-function circleFeature(center: LatLng, radiusM: number): CirclePolygonFeature {
-  const latRad = (center.lat * Math.PI) / 180;
-  const dLat = radiusM / 110_540;
-  const dLng = radiusM / (111_320 * Math.cos(latRad));
-  const coordinates: [number, number][] = [];
-  for (let i = 0; i <= CIRCLE_STEPS; i++) {
-    const angle = (i / CIRCLE_STEPS) * 2 * Math.PI;
-    coordinates.push([center.lng + dLng * Math.cos(angle), center.lat + dLat * Math.sin(angle)]);
-  }
-  return {
-    type: "Feature",
-    properties: {},
-    geometry: { type: "Polygon", coordinates: [coordinates] },
-  };
+function clampRadius(radiusM: number): number {
+  return Math.round(Math.min(SEARCH_RADIUS_MAX_M, Math.max(SEARCH_RADIUS_MIN_M, radiusM)));
 }
 
 export interface AreaMapProps {
-  /** Haritanın hedef merkezi — değişince `flyTo` ile buraya gider (örn. şehir değişimi) */
+  /** Maps JavaScript API tarayıcı anahtarı; yoksa harita yerine kurulum uyarısı gösterilir */
+  apiKey: string | null;
+  /** Haritanın hedef merkezi — değişince oraya kayar (örn. şehir değişimi) */
   center: LatLng;
   zoom: number;
-  /** Seçili alan; `null` → daire/işaretçi gösterilmez */
+  /** Seçili alan; `null` → daire gösterilmez */
   value: SearchArea | null;
   onChange: (area: SearchArea) => void;
   disabled?: boolean;
   className?: string;
 }
 
-export function AreaMap({ center, zoom, value, onChange, disabled, className }: AreaMapProps) {
+export function AreaMap({ apiKey, center, zoom, value, onChange, disabled, className }: AreaMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
-  const markerRef = useRef<Marker | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const circleRef = useRef<google.maps.Circle | null>(null);
   const valueRef = useRef(value);
   const onChangeRef = useRef(onChange);
   const disabledRef = useRef(disabled);
   const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   valueRef.current = value;
   onChangeRef.current = onChange;
   disabledRef.current = disabled;
 
-  // Harita yaşam döngüsü — yalnızca mount/unmount. StrictMode iki kez çalıştırırsa
-  // ilk mount temiz `map.remove()` ile kapanır, ikinci mount aynı container'da yeni bir
-  // map kurar; `containerRef.current` boşsa (henüz DOM'a bağlanmadıysa) hiçbir şey yapılmaz.
+  // Harita yaşam döngüsü — yalnızca mount/unmount.
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || !apiKey) return;
+    let cancelled = false;
+    const listeners: google.maps.MapsEventListener[] = [];
 
-    const map = new MapLibreMap({
-      container,
-      style: STYLE_URL,
-      center: [center.lng, center.lat] as LngLatLike,
-      zoom,
-    });
-    mapRef.current = map;
-    if (process.env.NODE_ENV !== "production") {
-      (window as unknown as { __areaMap?: MapLibreMap }).__areaMap = map;
+    // Geçersiz/kısıtlı anahtarda Google bu global'i çağırır (aksi halde harita gri kalır, sebep görünmez).
+    (window as unknown as { gm_authFailure?: () => void }).gm_authFailure = () => setLoadError(true);
+
+    if (!optionsSet) {
+      setOptions({ key: apiKey, v: "weekly", language: "tr", region: "TR" });
+      optionsSet = true;
     }
 
-    map.on("load", () => {
-      map.addSource(SOURCE_ID, { type: "geojson", data: EMPTY_FC });
-      map.addLayer({
-        id: `${SOURCE_ID}-fill`,
-        type: "fill",
-        source: SOURCE_ID,
-        paint: { "fill-color": AREA_COLOR, "fill-opacity": 0.15 },
-      });
-      map.addLayer({
-        id: `${SOURCE_ID}-line`,
-        type: "line",
-        source: SOURCE_ID,
-        paint: { "line-color": AREA_COLOR, "line-width": 2 },
-      });
-      setReady(true);
-    });
-
-    // Stil/tile hataları sessiz kalmasın (aksi halde harita boş görünür, sebebi görünmez)
-    map.on("error", (event) => {
-      console.error("[area-map]", event.error?.message ?? event);
-    });
-
-    map.on("click", (event) => {
-      if (disabledRef.current) return;
+    const emit = (lat: number, lng: number, radiusM?: number): void => {
       onChangeRef.current({
-        lat: event.lngLat.lat,
-        lng: event.lngLat.lng,
-        radiusM: valueRef.current?.radiusM ?? SEARCH_RADIUS_DEFAULT_M,
+        lat,
+        lng,
+        radiusM: clampRadius(radiusM ?? valueRef.current?.radiusM ?? SEARCH_RADIUS_DEFAULT_M),
       });
-    });
+    };
+
+    importLibrary("maps")
+      .then(({ Map, Circle }) => {
+        if (cancelled) return;
+        const map = new Map(container, {
+          center,
+          zoom,
+          clickableIcons: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          mapTypeControl: true,
+          gestureHandling: "greedy",
+          draggableCursor: "crosshair",
+        });
+        mapRef.current = map;
+        if (process.env.NODE_ENV !== "production") {
+          (window as unknown as { __areaMap?: google.maps.Map }).__areaMap = map;
+        }
+
+        // Daire hem sürüklenebilir (merkez) hem düzenlenebilir (kenardaki tutamaçla yarıçap).
+        const circle = new Circle({
+          map: null,
+          strokeColor: AREA_COLOR,
+          strokeWeight: 2,
+          fillColor: AREA_COLOR,
+          fillOpacity: 0.15,
+          draggable: true,
+          editable: true,
+        });
+        circleRef.current = circle;
+
+        const onClick = (event: google.maps.MapMouseEvent): void => {
+          if (disabledRef.current || !event.latLng) return;
+          emit(event.latLng.lat(), event.latLng.lng());
+        };
+        listeners.push(map.addListener("click", onClick));
+        listeners.push(
+          circle.addListener("dragend", () => {
+            const c = circle.getCenter();
+            if (c) emit(c.lat(), c.lng());
+          }),
+        );
+        // Yarıçap tutamacı bırakılınca tetiklenir; prop'tan gelen setRadius da tetikler →
+        // yalnız gerçekten farklıysa yay (döngü olmasın).
+        listeners.push(
+          circle.addListener("radius_changed", () => {
+            const current = valueRef.current;
+            const c = circle.getCenter();
+            if (!current || !c) return;
+            const radiusM = clampRadius(circle.getRadius());
+            if (radiusM !== current.radiusM) emit(c.lat(), c.lng(), radiusM);
+          }),
+        );
+        setReady(true);
+      })
+      .catch((error: unknown) => {
+        console.error("[area-map]", error);
+        if (!cancelled) setLoadError(true);
+      });
 
     return () => {
-      map.remove();
+      cancelled = true;
+      listeners.forEach((l) => l.remove());
+      circleRef.current?.setMap(null);
+      circleRef.current = null;
       mapRef.current = null;
-      markerRef.current = null;
       setReady(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- yalnızca mount/unmount; center/zoom/disabled değişimleri ayrı effect'lerde ele alınıyor
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- yalnızca mount/unmount; center/zoom/value değişimleri ayrı effect'lerde
+  }, [apiKey]);
 
-  // `center`/`zoom` prop'u değişince (örn. şehir seçimi) haritayı oraya uçur.
+  // `center`/`zoom` prop'u değişince (örn. şehir seçimi) haritayı oraya kaydır.
   useEffect(() => {
     if (!ready) return;
-    mapRef.current?.flyTo({ center: [center.lng, center.lat] as LngLatLike, zoom, essential: true });
+    mapRef.current?.panTo({ lat: center.lat, lng: center.lng });
+    mapRef.current?.setZoom(zoom);
   }, [ready, center.lat, center.lng, zoom]);
 
-  // Seçili alan (veya disabled durumu) değişince daireyi/işaretçiyi güncelle.
+  // Seçili alan (veya disabled) değişince daireyi güncelle.
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready) return;
-    const source = map.getSource(SOURCE_ID) as GeoJSONSource | undefined;
-
+    const circle = circleRef.current;
+    if (!circle || !ready) return;
     if (!value) {
-      source?.setData(EMPTY_FC);
-      markerRef.current?.remove();
-      markerRef.current = null;
+      circle.setMap(null);
       return;
     }
-
-    source?.setData({ type: "FeatureCollection", features: [circleFeature(value, value.radiusM)] });
-
-    if (markerRef.current) {
-      markerRef.current.setLngLat([value.lng, value.lat]);
-      markerRef.current.setDraggable(!disabled);
-    } else {
-      const marker = new Marker({ draggable: !disabled, color: AREA_COLOR })
-        .setLngLat([value.lng, value.lat])
-        .addTo(map);
-      marker.on("dragend", () => {
-        const lngLat = marker.getLngLat();
-        onChangeRef.current({
-          lat: lngLat.lat,
-          lng: lngLat.lng,
-          radiusM: valueRef.current?.radiusM ?? value.radiusM,
-        });
-      });
-      markerRef.current = marker;
-    }
+    const c = circle.getCenter();
+    if (!c || c.lat() !== value.lat || c.lng() !== value.lng) circle.setCenter({ lat: value.lat, lng: value.lng });
+    if (Math.round(circle.getRadius()) !== value.radiusM) circle.setRadius(value.radiusM);
+    circle.setOptions({ draggable: !disabled, editable: !disabled });
+    if (!circle.getMap()) circle.setMap(mapRef.current);
   }, [ready, value, disabled]);
 
-  // Devre dışı bırakılınca imleci ve sürüklenebilirliği güncelle.
   useEffect(() => {
-    markerRef.current?.setDraggable(!disabled);
-    const canvas = mapRef.current?.getCanvas();
-    if (canvas) canvas.style.cursor = disabled ? "not-allowed" : "";
+    mapRef.current?.setOptions({ draggableCursor: disabled ? "not-allowed" : "crosshair" });
   }, [disabled]);
 
-  return (
-    <div
-      ref={containerRef}
-      className={cn(
-        "h-[260px] w-full overflow-hidden rounded-lg border border-border sm:h-[360px]",
-        className,
-      )}
-    />
+  const boxClass = cn(
+    "h-[260px] w-full overflow-hidden rounded-lg border border-border sm:h-[360px]",
+    className,
   );
+
+  if (!apiKey || loadError) {
+    return (
+      <div className={cn(boxClass, "flex items-center justify-center bg-muted p-4 text-center")}>
+        <p className="max-w-md text-sm text-muted-foreground">
+          {apiKey ? tr.searches.form.mapLoadError : tr.searches.form.mapKeyMissing}
+        </p>
+      </div>
+    );
+  }
+
+  return <div ref={containerRef} className={boxClass} />;
 }

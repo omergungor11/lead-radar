@@ -40,6 +40,8 @@ const AreaMap = dynamic(() => import("@/components/map/area-map").then((m) => m.
 
 interface SearchFormProps {
   disabled: boolean;
+  /** Google Maps tarayıcı anahtarı (sunucu sayfasından); yoksa harita kurulum uyarısı gösterir */
+  mapsApiKey: string | null;
   onStarted: (jobId: string, city: string, district?: string, area?: SearchArea) => void;
 }
 
@@ -48,7 +50,7 @@ const CATEGORY_GROUPS = SEARCH_CATEGORY_GROUPS.map((g) => ({
   items: g.items,
 }));
 
-export function SearchForm({ disabled, onStarted }: SearchFormProps) {
+export function SearchForm({ disabled, mapsApiKey, onStarted }: SearchFormProps) {
   const { data: settings } = useSettingsQuery();
   const [category, setCategory] = useState("");
   const [city, setCity] = useState("");
@@ -225,6 +227,7 @@ export function SearchForm({ disabled, onStarted }: SearchFormProps) {
               <div className="flex flex-col gap-3 rounded-lg border border-border p-3">
                 <p className="text-xs text-muted-foreground">{tr.searches.form.mapHint}</p>
                 <AreaMap
+                  apiKey={mapsApiKey}
                   center={mapCenter}
                   zoom={mapZoom}
                   value={area}

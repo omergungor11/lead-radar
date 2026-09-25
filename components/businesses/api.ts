@@ -22,6 +22,7 @@ function toQueryString(filters: BusinessFilters & { ids?: string[] }): string {
   if (filters.web) params.set("web", filters.web);
   if (filters.q) params.set("q", filters.q);
   if (filters.sort) params.set("sort", filters.sort);
+  if (filters.dir) params.set("dir", filters.dir);
   if (filters.page) params.set("page", String(filters.page));
   if (filters.pageSize) params.set("pageSize", String(filters.pageSize));
   if (filters.ids && filters.ids.length > 0) params.set("ids", filters.ids.join(","));

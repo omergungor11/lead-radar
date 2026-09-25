@@ -142,7 +142,7 @@ describe("runSearchJob (mock istemci)", () => {
     expect(mocks.jobUpdate.mock.calls.at(-1)?.[0].data).toMatchObject({ linkOnly: 2, withoutWebsite: 3 });
   });
 
-  it("alan araması: sorgu metni yalnız kategori, locationRestriction gönderilir", async () => {
+  it("alan araması: sorgu metni yalnız kategori, alan gönderilir", async () => {
     const client = createMockPlacesClient();
     const searchSpy = vi.spyOn(client, "searchText");
     const area = { lat: 35.1854, lng: 33.361, radiusM: 3000 };
@@ -152,11 +152,7 @@ describe("runSearchJob (mock istemci)", () => {
       client,
     );
 
-    expect(searchSpy).toHaveBeenCalledWith("berber", undefined, {
-      locationRestriction: {
-        circle: { center: { latitude: 35.1854, longitude: 33.361 }, radius: 3000 },
-      },
-    });
+    expect(searchSpy).toHaveBeenCalledWith("berber", undefined, { area });
   });
 
   it("alan araması: yalnız daire içindeki fixture'lar taranır", async () => {

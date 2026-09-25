@@ -57,3 +57,11 @@ export function getServerEnv(): ServerEnv {
     placesMock: parsed.data.PLACES_MOCK === "1",
   };
 }
+
+/**
+ * Harita için tarayıcı anahtarı — client'a gider, bu yüzden Places anahtarından AYRI olmalı
+ * (yalnız Maps JavaScript API + HTTP referrer kısıtı). Çalışma anında okunur, build'e gömülmez.
+ */
+export function getMapsBrowserKey(): string | null {
+  return emptyToUndefined(process.env.GOOGLE_MAPS_BROWSER_KEY) ?? null;
+}

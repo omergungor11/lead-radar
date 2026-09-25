@@ -4,7 +4,7 @@
 
 import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BUSINESS_SORTS, type BusinessFilters, type BusinessSort } from "@/lib/types";
+import { BUSINESS_SORTS, SORT_DIRS, type BusinessFilters, type BusinessSort, type SortDir } from "@/lib/types";
 import { isStatus } from "@/lib/status";
 import { isWebsiteKind } from "@/lib/website";
 
@@ -23,6 +23,10 @@ function isSort(value: string | null): value is BusinessSort {
   return value !== null && (BUSINESS_SORTS as readonly string[]).includes(value);
 }
 
+function isDir(value: string | null): value is SortDir {
+  return value !== null && (SORT_DIRS as readonly string[]).includes(value);
+}
+
 export function useBusinessFilters() {
   const router = useRouter();
   const pathname = usePathname();
@@ -33,6 +37,7 @@ export function useBusinessFilters() {
     const bandParam = searchParams.get("band");
     const webParam = searchParams.get("web");
     const sortParam = searchParams.get("sort");
+    const dirParam = searchParams.get("dir");
     const pageParam = Number(searchParams.get("page"));
 
     return {
@@ -44,6 +49,7 @@ export function useBusinessFilters() {
       web: isWebsiteKind(webParam) ? webParam : undefined,
       q: searchParams.get("q") ?? undefined,
       sort: isSort(sortParam) ? sortParam : "score",
+      dir: isDir(dirParam) ? dirParam : undefined,
       page: Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1,
       pageSize: PAGE_SIZE,
     };
@@ -53,7 +59,7 @@ export function useBusinessFilters() {
     (
       patch: Partial<
         Record<
-          "city" | "district" | "category" | "status" | "band" | "web" | "q" | "sort",
+          "city" | "district" | "category" | "status" | "band" | "web" | "q" | "sort" | "dir",
           string | undefined
         >
       >,

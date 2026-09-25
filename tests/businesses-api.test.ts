@@ -285,7 +285,8 @@ describe("parseBusinessFilters", () => {
     ["band=hot"],
     ["web=social"],
     ["web=INSTAGRAM"],
-    ["sort=name"],
+    ["sort=foo"],
+    ["dir=up"],
     ["page=0"],
     ["page=abc"],
     ["pageSize=201"],
@@ -314,10 +315,37 @@ describe("buildWhere / buildOrderBy", () => {
   });
 
   it("q: ad/telefon/E164 contains; telefon rakamları baştaki 0'sız aranır", () => {
-    expect(buildWhere({ q: "Kuaför" })).toEqual({
-      OR: [{ name: { contains: "Kuaför" } }, { phone: { contains: "Kuaför" } }, { phoneE164: { contains: "Kuaför" } }],
+    expect(buildWhere({ q: "Yıldız" })).toEqual({
+      OR: [{ name: { contains: "Yıldız" } }, { phone: { contains: "Yıldız" } }, { phoneE164: { contains: "Yıldız" } }],
     });
     expect(buildWhere({ q: "0392 228" }).OR).toContainEqual({ phoneE164: { contains: "392228" } });
+  });
+
+  it("q: kategori etiketi/kodu → birincil tip ya da types listesi", () => {
+    const or = buildWhere({ q: "kafe" }).OR;
+    expect(or).toContainEqual({ primaryType: "cafe" });
+    expect(or).toContainEqual({ types: { contains: '"cafe"' } });
+    expect(buildWhere({ q: "KAFE" }).OR).toContainEqual({ primaryType: "cafe" });
+    expect(buildWhere({ q: "restaurant" }).OR).toContainEqual({ primaryType: "seafood_restaurant" });
+    expect(buildWhere({ q: "k" }).OR).toHaveLength(3);
+  });
+
+  it("kolon sıralaması: varsayılan yön, dir ile ters çevirme, boşlar sonda", () => {
+    expect(buildOrderBy("name")).toEqual([{ name: "asc" }, { id: "asc" }]);
+    expect(buildOrderBy("name", "desc")).toEqual([{ name: "desc" }, { id: "asc" }]);
+    expect(buildOrderBy("category")[0]).toEqual({ primaryType: { sort: "asc", nulls: "last" } });
+    expect(buildOrderBy("email", "desc")[0]).toEqual({ email: { sort: "desc", nulls: "last" } });
+    expect(buildOrderBy("rating")[0]).toEqual({ rating: { sort: "desc", nulls: "last" } });
+    expect(buildOrderBy("lastContact")[0]).toEqual({ lastContactedAt: { sort: "desc", nulls: "last" } });
+    expect(buildOrderBy("score", "asc")[0]).toEqual({ score: "asc" });
+    for (const sort of ["city", "phone", "status"] as const) {
+      expect(buildOrderBy(sort).at(-1)).toEqual({ id: "asc" });
+    }
+  });
+
+  it("dir parse edilir", () => {
+    const r = parseBusinessFilters(new URLSearchParams("sort=name&dir=desc"));
+    expect(r.success && r.data.dir).toBe("desc");
   });
 
   it("sıralama", () => {

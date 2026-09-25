@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  circleRestriction,
+  rectangleRestriction,
   createPlacesClient,
   DETAILS_FIELD_MASK,
   getPlacesClient,
@@ -41,7 +41,7 @@ describe("createPlacesClient", () => {
     const result = await client.searchText("berber Lefkoşa", "tok1");
 
     expect(TEXT_SEARCH_FIELD_MASK).toBe(
-      "places.id,places.displayName,places.websiteUri,places.businessStatus,nextPageToken",
+      "places.id,places.displayName,places.websiteUri,places.businessStatus,places.location,nextPageToken",
     );
     const [url, init] = fetchMock.mock.calls[0] ?? [];
     expect(url).toBe("https://places.googleapis.com/v1/places:searchText");
@@ -61,25 +61,36 @@ describe("createPlacesClient", () => {
     });
   });
 
-  it("alan araması: gövdeye locationRestriction eklenir, field mask değişmez", async () => {
+  it("alan araması: gövdeye rectangle locationRestriction eklenir (circle 400 döner), daire dışı elenir", async () => {
+    const area = { lat: 35.1854, lng: 33.361, radiusM: 2500 };
     const fetchMock = vi.fn<(url: string | URL | Request, init?: RequestInit) => Promise<Response>>(async () =>
-      jsonResponse({ places: [] }),
+      jsonResponse({
+        places: [
+          { id: "in", location: { latitude: 35.19, longitude: 33.365 } },
+          // Dikdörtgenin köşesi: dairenin dışında
+          { id: "corner", location: { latitude: 35.2054, longitude: 33.3855 } },
+          { id: "no-loc" },
+        ],
+      }),
     );
     const client = createPlacesClient("KEY", { fetch: fetchMock as typeof fetch, sleep: noSleep });
 
-    await client.searchText("berber", undefined, {
-      locationRestriction: circleRestriction({ lat: 35.1854, lng: 33.361, radiusM: 2500 }),
-    });
+    const result = await client.searchText("berber", undefined, { area });
 
     const [, init] = fetchMock.mock.calls[0] ?? [];
-    expect(JSON.parse(String(init?.body))).toEqual({
+    const body = JSON.parse(String(init?.body));
+    expect(body).toEqual({
       textQuery: "berber",
       languageCode: "tr",
       pageSize: 20,
-      locationRestriction: {
-        circle: { center: { latitude: 35.1854, longitude: 33.361 }, radius: 2500 },
-      },
+      locationRestriction: rectangleRestriction(area),
     });
+    expect(body.locationRestriction.circle).toBeUndefined();
+    const { low, high } = body.locationRestriction.rectangle;
+    expect(low.latitude).toBeLessThan(area.lat);
+    expect(high.latitude).toBeGreaterThan(area.lat);
+    expect(high.latitude - area.lat).toBeCloseTo(2500 / 110_540, 6);
+    expect(result.places.map((p) => p.id)).toEqual(["in", "no-loc"]);
     expect(headersOf(init)["X-Goog-FieldMask"]).toBe(TEXT_SEARCH_FIELD_MASK);
   });
 
@@ -219,11 +230,11 @@ describe("mock istemci", () => {
     expect(iskele.places).toHaveLength(6);
   });
 
-  it("locationRestriction: mesafeye göre filtreler, şehir metnini yok sayar", async () => {
+  it("alan: mesafeye göre filtreler, şehir metnini yok sayar", async () => {
     const client = createMockPlacesClient();
     const girneCenter = { lat: 35.3396, lng: 33.3205 };
-    const restriction = (radiusM: number): { locationRestriction: ReturnType<typeof circleRestriction> } => ({
-      locationRestriction: circleRestriction({ ...girneCenter, radiusM }),
+    const restriction = (radiusM: number): { area: { lat: number; lng: number; radiusM: number } } => ({
+      area: { ...girneCenter, radiusM },
     });
 
     // Sorguda "Lefkoşa" geçse de coğrafyayı daire belirler

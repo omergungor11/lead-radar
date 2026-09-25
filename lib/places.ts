@@ -6,14 +6,18 @@ import { z } from "zod";
 import { getServerEnv } from "@/lib/env";
 import { PlacesError } from "@/lib/places-error";
 import { createMockPlacesClient } from "@/lib/places.mock";
+import { distanceMeters } from "@/lib/geo";
 import { tr } from "@/lib/tr";
 import type { SearchArea } from "@/lib/types";
 
 const API_BASE = "https://places.googleapis.com/v1";
 
-/** Text Search field mask — TAM bu 5 alan (TASK-105 AC). */
+/**
+ * Text Search field mask. `places.location` alan aramasında daire dışını elemek için; websiteUri
+ * zaten en üst SKU'da (Enterprise) olduğundan ek maliyeti yok.
+ */
 export const TEXT_SEARCH_FIELD_MASK =
-  "places.id,places.displayName,places.websiteUri,places.businessStatus,nextPageToken";
+  "places.id,places.displayName,places.websiteUri,places.businessStatus,places.location,nextPageToken";
 
 /** Place Details field mask — yalnızca sitesiz işletmeler için çağrılır. */
 export const DETAILS_FIELD_MASK = [
@@ -54,6 +58,7 @@ const textSearchPlaceSchema = z
     displayName: localizedText.optional(),
     websiteUri: z.string().optional(),
     businessStatus: z.string().optional(),
+    location: z.object({ latitude: z.number(), longitude: z.number() }).loose().optional(),
   })
   .loose();
 
@@ -115,27 +120,43 @@ export interface TextSearchResult {
   nextPageToken?: string;
 }
 
-/** Places API (New) `locationRestriction.circle` — yarıçap metre cinsinden. */
-export interface CircleRestriction {
-  circle: {
-    center: { latitude: number; longitude: number };
-    radius: number;
+/**
+ * Places API (New) `locationRestriction.rectangle`. Text Search yalnız dikdörtgen kabul eder —
+ * `circle` gönderilirse 400 INVALID_ARGUMENT döner (circle yalnız locationBias'ta geçerli).
+ */
+export interface RectangleRestriction {
+  rectangle: {
+    low: { latitude: number; longitude: number };
+    high: { latitude: number; longitude: number };
   };
 }
 
 export interface TextSearchOptions {
-  /** Verilirse arama bu daireyle sınırlanır; sorgu metnine şehir/ilçe eklenmez. */
-  locationRestriction?: CircleRestriction;
+  /**
+   * Verilirse arama bu daireyle sınırlanır; sorgu metnine şehir/ilçe eklenmez. Places'a dairenin
+   * çevreleyen dikdörtgeni gönderilir, köşelerde kalan sonuçlar mesafeye göre elenir.
+   */
+  area?: SearchArea;
 }
 
-/** `SearchArea` → Places gövdesindeki `locationRestriction`. */
-export function circleRestriction(area: SearchArea): CircleRestriction {
+/** `SearchArea` (daire) → onu çevreleyen `locationRestriction.rectangle` (enlem düzeltmeli). */
+export function rectangleRestriction(area: SearchArea): RectangleRestriction {
+  const dLat = area.radiusM / 110_540;
+  const dLng = area.radiusM / (111_320 * Math.cos((area.lat * Math.PI) / 180));
   return {
-    circle: {
-      center: { latitude: area.lat, longitude: area.lng },
-      radius: area.radiusM,
+    rectangle: {
+      low: { latitude: area.lat - dLat, longitude: area.lng - dLng },
+      high: { latitude: area.lat + dLat, longitude: area.lng + dLng },
     },
   };
+}
+
+/** Konumu bilinmeyen yer elenmez (Google'ın dikdörtgen kısıtı zaten uygulanmış). */
+export function isInsideArea(place: TextSearchPlace, area: SearchArea): boolean {
+  if (!place.location) return true;
+  return (
+    distanceMeters(area, { lat: place.location.latitude, lng: place.location.longitude }) <= area.radiusM
+  );
 }
 
 export interface PlacesClient {
@@ -227,14 +248,18 @@ export function createPlacesClient(apiKey: string, options: PlacesClientOptions 
         pageSize: TEXT_SEARCH_PAGE_SIZE,
       };
       if (pageToken) body.pageToken = pageToken;
-      // Field mask değişmez; locationRestriction yalnız gövdede yer alır (ek SKU maliyeti yok).
-      if (options?.locationRestriction) body.locationRestriction = options.locationRestriction;
+      const area = options?.area;
+      if (area) body.locationRestriction = rectangleRestriction(area);
       const data = await request(
         `${API_BASE}/places:searchText`,
         { method: "POST", fieldMask: TEXT_SEARCH_FIELD_MASK, body },
         textSearchResponseSchema,
       );
-      return { places: data.places ?? [], nextPageToken: data.nextPageToken || undefined };
+      const places = data.places ?? [];
+      return {
+        places: area ? places.filter((p) => isInsideArea(p, area)) : places,
+        nextPageToken: data.nextPageToken || undefined,
+      };
     },
 
     getDetails(placeId) {
